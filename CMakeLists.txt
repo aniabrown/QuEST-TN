@@ -22,8 +22,14 @@ endif()
 # ----- USER EXECUTABLE -------------------------------------------------------
 # -----------------------------------------------------------------------------
 
+add_subdirectory(TN)
+
 # Create user executable
-add_executable(demo simpleCircuit.c)
+add_executable(demo simpleCircuit.c ${TN_SRC})
+
+target_include_directories(demo
+    PRIVATE TN
+)
 
 # Link libraries to user executable, including QuEST library
 target_link_libraries(demo QuEST m)

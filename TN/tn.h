@@ -15,15 +15,10 @@
 **/
 
 
-typedef struct VqCoord {
+typedef struct QCoord {
     int tensorIndex;
-    int vqIndex;
-} VqCoord;
-
-typedef struct VqAdjacencyList {
-    int numAdjacencies;
-    VqCoord *adjacencyList;
-}
+    int qIndex;
+} QCoord;
 
 typedef struct Tensor {
     Qureg qureg;
@@ -36,8 +31,9 @@ typedef struct Tensor {
 typedef struct TensorNetwork {
     int numTensors;
     Tensor *tensors;
-    int *tensorIdFromGlobalPq;
-    VqAdjacencyList *adjacencyList;
+    int *tensorIndexFromGlobalPq;
+    QCoord **adjacencyList;
+    int *numAdjacencies;
 } TensorNetwork;
 
 
@@ -50,7 +46,8 @@ void contractTensorNetwork(TensorNetwork tn);
 */ 
 void contractTensors(TensorNetwork tn, int tensor1, int tensor2);
 
-TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor);
+TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor,
+        QuESTEnv env);
 
 /** probably ineffient, but included for utility
  */
@@ -63,7 +60,16 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
 
 void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u);
 
+void initVirtualTarget(Tensor tensor, int vqIndex);
+void initVirtualControl(Tensor tensor, int vqIndex);
 
+// ----- utility --------------------------------------------------------------
+
+QCoord getLocalPq(TensorNetwork tn, int globalPq);
+
+// ----- reporting ------------------------------------------------------------
+
+void printTensorNetwork(TensorNetwork tn);
 
 
 

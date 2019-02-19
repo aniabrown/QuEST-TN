@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "QuEST.h"
+#include "tn.h"
 
 int main (int narg, char *varg[]) {
 
@@ -18,9 +19,8 @@ int main (int narg, char *varg[]) {
      * PREPARE QUBIT SYSTEM
      */
 
-    Qureg qubits = createQureg(3, env);
+    Qureg qubits = createQureg(4, env);
     initZeroState(qubits);
-
 
     /*
      * REPORT SYSTEM AND ENVIRONMENT
@@ -34,21 +34,20 @@ int main (int narg, char *varg[]) {
      */
 
     controlledNot(qubits, 0, 1);
+    reportStateToScreen(qubits, env, 0);
 
-    printf("\nCircuit output:\n");
 
-    qreal prob;
-    prob = getProbAmp(qubits, 7);
-    printf("Probability amplitude of |111>: %f\n", prob);
+    /*
+     * TENSOR NETWORK
+     */
+    int numPqPerTensor[2] = {2, 2};
+    int numVqPerTensor[2] = {1, 1};
+    TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
+    printTensorNetwork(tn);
+    tn_controlledNot(tn, 1, 2);
+    printTensorNetwork(tn);
 
-    prob = calcProbOfOutcome(qubits, 2, 1);
-    printf("Probability of qubit 2 being in state 1: %f\n", prob);
 
-    int outcome = measure(qubits, 0);
-    printf("Qubit 0 was measured in state %d\n", outcome);
-
-    outcome = measureWithStats(qubits, 2, &prob);
-    printf("Qubit 2 collapsed to %d with probability %f\n", outcome, prob);
 
 
     /*
