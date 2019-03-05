@@ -1,0 +1,7 @@
+set(TN_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/tn.c
+    PARENT_SCOPE
+)
+
+
+

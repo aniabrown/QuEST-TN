@@ -7,7 +7,59 @@
 void contractTensorNetwork(TensorNetwork tn){
 }
 
-void contractTensors(TensorNetwork tn, int tensor1, int tensor2){
+void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, Qureg env){
+    // always store new tensor in the smaller tensor index
+    if (tensorIndex2 < tensorIndex1){
+        int tensorIndexTmp = tensorIndex1;
+        tensorIndex1 = tensorIndex2;
+        tensorIndex2 = tensorIndexTmp;
+    }
+
+    Tensor tensor1 = tn.tensors[tensor1Index];
+    Tensor tensor2 = tn.tensors[tensor2Index]; 
+
+    int totalNumPq = tensor1.numPq + tensor2.numPq;
+    int totalNumQ = getTotalContractedQubits(); //TODO
+    contractedQureg = createQureg(totalNumPq, env);
+    Qureg qureg1 = tensor1.qureg;
+    Qureg qureg2 = tensor2.qureg;
+
+    int numContractions = getNumContractions(); //TODO
+    int *tensor1Contractions = getContractions(); //TODO [v0, v1]
+    int *tensor2Contractions = getContractions(); //TODO [v1, v2]
+
+    long long int contractedStateVecSize;
+    long long int contractedIndex;
+
+    contractedStateVecSize = 1LL << totalNumQ;
+
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (qureg1, qureg2, contractedQureg, contractedStateVecSize) \
+    private  (contractedIndex)
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (contractedIndex=0; contractedIndex<stateVecSize; contractedIndex++) {
+            qreal sum=0;
+            for (int i=0; i<numContractions; i++){
+                // get qureg1 index, qureg2 index from contractedIndex, i
+            }
+        }
+    }
+
+    
+    destroyQureg(tensor1.qureg, env);
+    destroyQureg(tensor2.qureg, env);
+
+    tn.tensors[tensor1].qureg = contractedQureg;
+    tn.tensors[tensor1].numPq = totalNumPq;
+    tn.tensors[tensor1].numVq = 0;
+
+    //TODO: remove adjacencies
 }
  
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor, 
@@ -146,11 +198,9 @@ void initVirtualControl(Tensor tensor, int vqIndex){
     int numFilledQubits = tensor.numPq + tensor.nextVqIndex;
     stateVecSize = 1LL << numFilledQubits;
 
-    // Can't use qureg->stateVec as a private OMP var
     qreal *stateVecReal = qureg.stateVec.real;
     qreal *stateVecImag = qureg.stateVec.imag;
 
-    // initialise the state-vector to all-zeroes
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
@@ -167,6 +217,8 @@ void initVirtualControl(Tensor tensor, int vqIndex){
         }
     }
 }
+
+void 
 
 // ----- utility --------------------------------------------------------------
 
