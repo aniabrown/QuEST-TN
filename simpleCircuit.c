@@ -42,16 +42,19 @@ int main (int narg, char *varg[]) {
      */
     int numPqPerTensor[2] = {2, 2};
     int numVqPerTensor[2] = {1, 1};
+    printf("\n\nCreate Tensor Network:\n");
     TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
+    printf("\n\nApply controlled not:\n");
     tn_controlledNot(tn, 1, 2);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
+    printf("\n\nContract tensors:\n");
     contractTensors(tn, 0, 1, env);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
