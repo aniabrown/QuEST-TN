@@ -44,7 +44,7 @@ void contractTensorNetwork(TensorNetwork tn);
 /**
     replaces the tensor object at index tensor1 with the contraction of tensor1 and tensor 2
 */ 
-void contractTensors(TensorNetwork tn, int tensor1, int tensor2);
+void contractTensors(TensorNetwork tn, int tensor1, int tensor2, QuESTEnv env);
 
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor,
         QuESTEnv env);

@@ -7,57 +7,65 @@
 void contractTensorNetwork(TensorNetwork tn){
 }
 
-void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, Qureg env){
+void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuESTEnv env){
     // always store new tensor in the smaller tensor index
-    if (tensorIndex2 < tensorIndex1){
-        int tensorIndexTmp = tensorIndex1;
-        tensorIndex1 = tensorIndex2;
-        tensorIndex2 = tensorIndexTmp;
+    if (tensor2Index < tensor1Index){
+        int tensorIndexTmp = tensor1Index;
+        tensor1Index = tensor2Index;
+        tensor2Index = tensorIndexTmp;
     }
 
     Tensor tensor1 = tn.tensors[tensor1Index];
     Tensor tensor2 = tn.tensors[tensor2Index]; 
 
     int totalNumPq = tensor1.numPq + tensor2.numPq;
-    int totalNumQ = getTotalContractedQubits(); //TODO
-    contractedQureg = createQureg(totalNumPq, env);
+    //int totalNumQ = getTotalContractedQubits(); //TODO
+    int totalNumQ = totalNumPq; //TODO
+    Qureg contractedQureg = createQureg(totalNumPq, env);
     Qureg qureg1 = tensor1.qureg;
     Qureg qureg2 = tensor2.qureg;
 
-    int numContractions = getNumContractions(); //TODO
-    int *tensor1Contractions = getContractions(); //TODO [v0, v1]
-    int *tensor2Contractions = getContractions(); //TODO [v1, v2]
+    //int numContractions = getNumContractions(); //TODO
+    int numContractions = 1;
+    //int *tensor1Contractions = getContractions(); //TODO [v0, v1]
+    //int *tensor1Contractions; //TODO [v0, v1]
+    //*tensor1Contractions = tensor1.numPq;
+    //int *tensor2Contractions = getContractions(); //TODO [v1, v2]
+    //int *tensor2Contractions; //TODO [v1, v2]
+    //*tensor2Contractions = tensor2.numPq;
 
-    long long int contractedStateVecSize;
-    long long int contractedIndex;
+    long long int contractedStateVecSize, stateVec1Size, stateVec2Size;
+    long long int contractedIndex, stateVec1Index, stateVec2Index;
 
     contractedStateVecSize = 1LL << totalNumQ;
+    stateVec1Size = 1LL << tensor1.numPq;
+    stateVec2Size = 1LL << tensor2.numPq;
 
-# ifdef _OPENMP
-# pragma omp parallel \
-    default  (none) \
-    shared   (qureg1, qureg2, contractedQureg, contractedStateVecSize) \
-    private  (contractedIndex)
-# endif
-    {
-# ifdef _OPENMP
-# pragma omp for schedule (static)
-# endif
-        for (contractedIndex=0; contractedIndex<stateVecSize; contractedIndex++) {
-            qreal sum=0;
-            for (int i=0; i<numContractions; i++){
-                // get qureg1 index, qureg2 index from contractedIndex, i
-            }
+    qreal sumReal, sumImag;
+
+    for (stateVec1Index=0; stateVec1Index<stateVec1Size; stateVec1Index++) {
+	for (stateVec2Index=0; stateVec2Index<stateVec2Size; stateVec2Index++) {
+		sumReal = qureg1.stateVec.real[stateVec1Index] * 
+			qureg2.stateVec.real[stateVec2Index];
+		sumReal -= qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
+			qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+
+		sumImag = qureg1.stateVec.imag[stateVec1Index] * 
+			qureg2.stateVec.real[stateVec2Index];
+		sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
+			qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+		contractedIndex = stateVec1Index*stateVec2Size + stateVec2Index;
+		contractedQureg.stateVec.real[contractedIndex] = sumReal;
+		contractedQureg.stateVec.imag[contractedIndex] = sumImag;
         }
     }
-
     
     destroyQureg(tensor1.qureg, env);
-    destroyQureg(tensor2.qureg, env);
+    //destroyQureg(tensor2.qureg, env);
 
-    tn.tensors[tensor1].qureg = contractedQureg;
-    tn.tensors[tensor1].numPq = totalNumPq;
-    tn.tensors[tensor1].numVq = 0;
+    tn.tensors[tensor1Index].qureg = contractedQureg;
+    tn.tensors[tensor1Index].numPq = totalNumPq;
+    tn.tensors[tensor1Index].numVq = 0;
 
     //TODO: remove adjacencies
 }
@@ -131,6 +139,7 @@ void addTensorToNetwork(int numPq, int numVq){
 }
 
 // ----- operations ------------------------------------------------------------
+
 
 void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int targetQubit){
     QCoord controlPqLocal = getLocalPq(tn, controlQubit);
@@ -218,17 +227,14 @@ void initVirtualControl(Tensor tensor, int vqIndex){
     }
 }
 
-void 
 
 // ----- utility --------------------------------------------------------------
-
 QCoord getLocalPq(TensorNetwork tn, int globalPq){
     QCoord localPq;
     localPq.tensorIndex = tn.tensorIndexFromGlobalPq[globalPq];
     localPq.qIndex = globalPq - tn.tensors[localPq.tensorIndex].firstGlobalPqIndex;
     return localPq;
 }
-
 
 // ----- reporting ------------------------------------------------------------
 
