@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "QuEST.h"
+#include "QuEST_debug.h"
 #include "tn.h"
 
 int main (int narg, char *varg[]) {
@@ -19,8 +20,13 @@ int main (int narg, char *varg[]) {
      * PREPARE QUBIT SYSTEM
      */
 
-    Qureg qubits = createQureg(4, env);
+    Qureg qubits = createQureg(2, env);
+    //initStateDebug(qubits);
     initZeroState(qubits);
+    pauliX(qubits, 0);
+    //hadamard(qubits, 0);
+    //hadamard(qubits, 2);
+    reportStateToScreen(qubits, env, 0);
 
     /*
      * REPORT SYSTEM AND ENVIRONMENT
@@ -40,7 +46,7 @@ int main (int narg, char *varg[]) {
     /*
      * TENSOR NETWORK
      */
-    int numPqPerTensor[2] = {2, 2};
+    int numPqPerTensor[2] = {1, 1};
     int numVqPerTensor[2] = {1, 1};
     printf("\n\nCreate Tensor Network:\n");
     TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
@@ -49,7 +55,7 @@ int main (int narg, char *varg[]) {
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
     printf("\n\nApply controlled not:\n");
-    tn_controlledNot(tn, 1, 2);
+    tn_controlledNot(tn, 0, 1);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
@@ -57,7 +63,7 @@ int main (int narg, char *varg[]) {
     printf("\n\nContract tensors:\n");
     contractTensors(tn, 0, 1, env);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-    reportStateToScreen(tn.tensors[1].qureg, env, 0);
+    //reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
 
 

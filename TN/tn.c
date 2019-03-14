@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <QuEST.h>
+#include "QuEST_debug.h"
 
 #include "tn.h"
 
@@ -44,24 +45,37 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     qreal sumReal, sumImag;
 
     for (stateVec1Index=0; stateVec1Index<stateVec1Size; stateVec1Index++) {
-	for (stateVec2Index=0; stateVec2Index<stateVec2Size; stateVec2Index++) {
-		sumReal = qureg1.stateVec.real[stateVec1Index] * 
-			qureg2.stateVec.real[stateVec2Index];
-		sumReal -= qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
-			qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+        for (stateVec2Index=0; stateVec2Index<stateVec2Size; stateVec2Index++) {
+            sumReal = qureg1.stateVec.real[stateVec1Index] * 
+                qureg2.stateVec.real[stateVec2Index];
+            sumReal -= qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
+                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
 
-		sumImag = qureg1.stateVec.imag[stateVec1Index] * 
-			qureg2.stateVec.real[stateVec2Index];
-		sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
-			qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
-		contractedIndex = stateVec1Index*stateVec2Size + stateVec2Index;
-		contractedQureg.stateVec.real[contractedIndex] = sumReal;
-		contractedQureg.stateVec.imag[contractedIndex] = sumImag;
+            sumImag = qureg1.stateVec.imag[stateVec1Index] * 
+                qureg2.stateVec.real[stateVec2Index];
+            sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
+                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+
+            /*
+            sumReal = qureg1.stateVec.real[stateVec1Index] * 
+                qureg2.stateVec.real[stateVec2Index];
+            sumReal += qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
+                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+
+            sumImag = -qureg1.stateVec.imag[stateVec1Index] * 
+                qureg2.stateVec.real[stateVec2Index];
+            sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
+                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+    */
+
+            contractedIndex = stateVec2Index*stateVec1Size + stateVec1Index;
+            contractedQureg.stateVec.real[contractedIndex] = sumReal;
+            contractedQureg.stateVec.imag[contractedIndex] = sumImag;
         }
     }
     
     destroyQureg(tensor1.qureg, env);
-    //destroyQureg(tensor2.qureg, env);
+    destroyQureg(tensor2.qureg, env);
 
     tn.tensors[tensor1Index].qureg = contractedQureg;
     tn.tensors[tensor1Index].numPq = totalNumPq;
@@ -111,6 +125,8 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
         // create qureg object and initialize to zero
         tmpTensor.qureg = createQureg(tmpTensor.numPq + tmpTensor.numVq, env);
         initZeroState(tmpTensor.qureg);
+        //if (i==0) hadamard(tmpTensor.qureg, 1);
+        if (i==0) pauliX(tmpTensor.qureg, 0);
 
         // for quick conversion to local index from global index
         tmpTensor.firstGlobalPqIndex = globalPqOffset;
@@ -155,18 +171,18 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         // do control tensor half
         // TODO: note this won't work if doing multiple different operations on the same tensor in parallel 
         int virtualTargetIndex = controlTensor->nextVqIndex;
-        controlTensor->nextVqIndex = controlTensor->nextVqIndex + 1;
-        // shouldn't have to initialize virtual target as virtual qubits are currently 
+        // TODO -- shouldn't have to initialize virtual target when virtual qubits are
         // automatically initialized in the zero state
-        //initVirtualTarget(controlTensor, virtualTargetIndex + controlTensor->numPq);
+        initVirtualTarget(*controlTensor, virtualTargetIndex + controlTensor->numPq);
+        controlTensor->nextVqIndex = controlTensor->nextVqIndex + 1;
         controlledNot(controlTensor->qureg, controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq);
         
         // do target tensor half
         // TODO: note this won't work if doing multiple different operations on the same tensor in parallel 
         Tensor *targetTensor = &(tn.tensors[targetPqLocal.tensorIndex]);
         int virtualControlIndex = targetTensor->nextVqIndex;
-        targetTensor->nextVqIndex = targetTensor->nextVqIndex + 1;
         initVirtualControl(*targetTensor, virtualControlIndex + targetTensor->numPq);
+        targetTensor->nextVqIndex = targetTensor->nextVqIndex + 1;
         controlledNot(targetTensor->qureg, virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
       
         // update adjacency list. 
@@ -204,8 +220,7 @@ void initVirtualControl(Tensor tensor, int vqIndex){
 
     // dimension of the state vector
     // TODO: This won't work in parallel
-    int numFilledQubits = tensor.numPq + tensor.nextVqIndex;
-    stateVecSize = 1LL << numFilledQubits;
+    stateVecSize = 1LL << vqIndex;
 
     qreal *stateVecReal = qureg.stateVec.real;
     qreal *stateVecImag = qureg.stateVec.imag;
