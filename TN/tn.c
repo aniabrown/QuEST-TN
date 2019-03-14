@@ -46,27 +46,27 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
 
     for (stateVec1Index=0; stateVec1Index<stateVec1Size; stateVec1Index++) {
         for (stateVec2Index=0; stateVec2Index<stateVec2Size; stateVec2Index++) {
+            printf("(%lld %lld), %f x %f + %f x %f\n", stateVec1Index, stateVec2Index, qureg1.stateVec.real[stateVec1Index], qureg2.stateVec.real[stateVec2Index], qureg1.stateVec.real[stateVec1Index+stateVec1Size], qureg2.stateVec.real[stateVec2Index+stateVec2Size]) ;
+
             sumReal = qureg1.stateVec.real[stateVec1Index] * 
                 qureg2.stateVec.real[stateVec2Index];
+            sumReal -= qureg1.stateVec.imag[stateVec1Index] * 
+                qureg2.stateVec.imag[stateVec2Index];
+
+            sumReal += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
+                qureg2.stateVec.real[stateVec2Index+stateVec2Size];
             sumReal -= qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
                 qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
 
             sumImag = qureg1.stateVec.imag[stateVec1Index] * 
                 qureg2.stateVec.real[stateVec2Index];
+            sumImag += qureg1.stateVec.real[stateVec1Index] * 
+                qureg2.stateVec.imag[stateVec2Index];
+
+            sumImag += qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
+                qureg2.stateVec.real[stateVec2Index+stateVec2Size];
             sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
                 qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
-
-            /*
-            sumReal = qureg1.stateVec.real[stateVec1Index] * 
-                qureg2.stateVec.real[stateVec2Index];
-            sumReal += qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
-                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
-
-            sumImag = -qureg1.stateVec.imag[stateVec1Index] * 
-                qureg2.stateVec.real[stateVec2Index];
-            sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
-                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
-    */
 
             contractedIndex = stateVec2Index*stateVec1Size + stateVec1Index;
             contractedQureg.stateVec.real[contractedIndex] = sumReal;
