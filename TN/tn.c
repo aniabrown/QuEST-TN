@@ -8,6 +8,76 @@
 void contractTensorNetwork(TensorNetwork tn){
 }
 
+int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index){
+    int numContractions = 0;
+    // adjacencies are stored on both tensors so just search tensor1
+    for (int i=0; i<tn.numAdjacencies[tensor1Index]; i++){
+        QCoord adjacency = tn.adjacencyList[tensor1Index][i];
+        if (adjacency.tensorIndex == tensor2Index) numContractions++;
+    }
+    return numContractions;
+}
+
+void getContractionIndices(TensorNetwork tn, int tensor1Index, tensor2Index, int numContractions,
+        int *tensor1Contractions, int *tensor2Contractions){
+    tensor1Contractions = malloc(numContractions*sizeof(*tensor1Contractions));
+    tensor2Contractions = malloc(numContractions*sizeof(*tensor2Contractions));
+
+    int count=0;
+    for (int i=0; i<tn.numAdjacencies[tensor1Index]; i++){
+        QCoord adjacency = tn.adjacencyList[tensor1Index][i];
+        if (adjacency.tensorIndex == tensor2Index) tensor1Contractions[count++]=i;
+    }
+    count=0;
+    for (int i=0; i<tn.numAdjacencies[tensor2Index]; i++){
+        QCoord adjacency = tn.adjacencyList[tensor2Index][i];
+        if (adjacency.tensorIndex == tensor1Index) tensor2Contractions[count++]=i;
+    }
+}
+
+Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset, 
+        long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions, 
+        int numContractions, int vqIndex){
+    tensor1OffsetNew = tensor1Offset + (1LL << (tensor1.numPq+tensor1Contractions[vQindex]) );
+    tensor2OffsetNew = tensor2Offset + (1LL << (tensor2.numPq+tensor2Contractions[vQindex]) );
+   
+    if (vqIndex==numContractions-1){
+        Qureg qureg1 = tensor1.qureg;
+        Qureg qureg2 = tensor2.qureg;
+
+        qreal *stateVec1Real = qureg1.stateVec.real;
+        qreal *stateVec1Imag = qureg1.stateVec.imag;
+        qreal *stateVec2Real = qureg2.stateVec.real;
+        qreal *stateVec2Imag = qureg2.stateVec.imag;
+
+        qureal sumReal=0;
+        qureal sumImag=0;
+
+        // Contracted index = 0
+        // Real component
+        sumReal += stateVec1Real[tensor1OffsetNew] * 
+            stateVec2Real[tensor2OffsetNew];
+        sumReal += -stateVec1Imag[tensor1OffsetNew] * 
+            stateVec2Imag[tensor2OffsetNew];
+
+        // Imag component
+        sumImag += stateVec1Imag[tensor1OffsetNew] * 
+            stateVec2Real[tensor2OffsetNew];
+        sumImag += stateVec1Real[tensor1OffsetNew] * 
+            stateVec2Imag[tensor2OffsetNew];
+
+        Complex sum;
+        sum.real = sumReal; sum.imag = sumImag;
+        return sum;
+    } else {
+        return 
+            recursiveContract(tensor1, tensor2, tensor1Offset, tensor2Offset, 
+                tensor1Contractions, tensor2Contractions, numContrations, vqIndex+1) +
+            recursiveContract(tensor1, tensor2, tensor1OffsetNew, tensor2OffsetNew, 
+                tensor1Contractions, tensor2Contractions, numContrations, vqIndex+1);
+    }
+}
+
 void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuESTEnv env){
     // always store new tensor in the smaller tensor index
     if (tensor2Index < tensor1Index){
@@ -26,14 +96,11 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     Qureg qureg1 = tensor1.qureg;
     Qureg qureg2 = tensor2.qureg;
 
-    //int numContractions = getNumContractions(); //TODO
-    int numContractions = 1;
-    //int *tensor1Contractions = getContractions(); //TODO [v0, v1]
-    //int *tensor1Contractions; //TODO [v0, v1]
-    //*tensor1Contractions = tensor1.numPq;
-    //int *tensor2Contractions = getContractions(); //TODO [v1, v2]
-    //int *tensor2Contractions; //TODO [v1, v2]
-    //*tensor2Contractions = tensor2.numPq;
+    int numContractions = getNumContractions(tn, tensor1Index, tensor2Index);
+    printf("numContractions: %d\n", numContractions);
+    int *tensor1Contractions, *tensor2Contractions; 
+    getContractionIndices(tn, tensor1Index, tensor2Index, numContractions, 
+            tensor1Contractions, tensor2Contractions);
 
     long long int contractedStateVecSize, stateVec1Size, stateVec2Size;
     long long int contractedIndex, stateVec1Index, stateVec2Index;
@@ -42,31 +109,47 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     stateVec1Size = 1LL << tensor1.numPq;
     stateVec2Size = 1LL << tensor2.numPq;
 
+
+
     qreal sumReal, sumImag;
+    qreal *stateVec1Real = qureg1.stateVec.real;
+    qreal *stateVec1Imag = qureg1.stateVec.imag;
+    qreal *stateVec2Real = qureg2.stateVec.real;
+    qreal *stateVec2Imag = qureg2.stateVec.imag;
 
     for (stateVec1Index=0; stateVec1Index<stateVec1Size; stateVec1Index++) {
         for (stateVec2Index=0; stateVec2Index<stateVec2Size; stateVec2Index++) {
-            printf("(%lld %lld), %f x %f + %f x %f\n", stateVec1Index, stateVec2Index, qureg1.stateVec.real[stateVec1Index], qureg2.stateVec.real[stateVec2Index], qureg1.stateVec.real[stateVec1Index+stateVec1Size], qureg2.stateVec.real[stateVec2Index+stateVec2Size]) ;
+            sumReal=0;
+            sumImag=0;
+            for (int i=0; i<numContractions; i++){
+                // Contracted index = 0
+                // Real component
+                sumReal += stateVec1Real[stateVec1Index] * 
+                    stateVec2Real[stateVec2Index];
+                sumReal += -stateVec1Imag[stateVec1Index] * 
+                    stateVec2Imag[stateVec2Index];
 
-            sumReal = qureg1.stateVec.real[stateVec1Index] * 
-                qureg2.stateVec.real[stateVec2Index];
-            sumReal -= qureg1.stateVec.imag[stateVec1Index] * 
-                qureg2.stateVec.imag[stateVec2Index];
+                // Imag component
+                sumImag += stateVec1Imag[stateVec1Index] * 
+                    stateVec2Real[stateVec2Index];
+                sumImag += stateVec1Real[stateVec1Index] * 
+                    stateVec2Imag[stateVec2Index];
 
-            sumReal += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
-                qureg2.stateVec.real[stateVec2Index+stateVec2Size];
-            sumReal -= qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
-                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
 
-            sumImag = qureg1.stateVec.imag[stateVec1Index] * 
-                qureg2.stateVec.real[stateVec2Index];
-            sumImag += qureg1.stateVec.real[stateVec1Index] * 
-                qureg2.stateVec.imag[stateVec2Index];
+                // Contracted index = 1
+                // Real component
+                sumReal += stateVec1Real[stateVec1Index+stateVec1Size] * 
+                    stateVec2Real[stateVec2Index+stateVec2Size];
+                sumReal += -stateVec1Imag[stateVec1Index+stateVec1Size] * 
+                    stateVec2Imag[stateVec2Index+stateVec2Size];
 
-            sumImag += qureg1.stateVec.imag[stateVec1Index+stateVec1Size] * 
-                qureg2.stateVec.real[stateVec2Index+stateVec2Size];
-            sumImag += qureg1.stateVec.real[stateVec1Index+stateVec1Size] * 
-                qureg2.stateVec.imag[stateVec2Index+stateVec2Size];
+                // Imag component
+                sumImag += stateVec1Imag[stateVec1Index+stateVec1Size] * 
+                    stateVec2Real[stateVec2Index+stateVec2Size];
+                sumImag += stateVec1Real[stateVec1Index+stateVec1Size] * 
+                    stateVec2Imag[stateVec2Index+stateVec2Size];
+
+            }
 
             contractedIndex = stateVec2Index*stateVec1Size + stateVec1Index;
             contractedQureg.stateVec.real[contractedIndex] = sumReal;
@@ -194,9 +277,11 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         adjacency.tensorIndex = targetPqLocal.tensorIndex;
         adjacency.qIndex = virtualControlIndex; 
         tn.adjacencyList[controlPqLocal.tensorIndex][virtualTargetIndex] = adjacency;
-        printf("target: %d\n", tn.adjacencyList[controlPqLocal.tensorIndex][virtualTargetIndex].tensorIndex);
-        printf("%d %d\n", controlPqLocal.tensorIndex, virtualTargetIndex);
-        tn.numAdjacencies[controlPqLocal.tensorIndex] = tn.numAdjacencies[controlPqLocal.tensorIndex] + 1;
+        adjacency.tensorIndex = controlPqLocal.tensorIndex;
+        adjacency.qIndex = virtualTargetIndex; 
+        tn.adjacencyList[targetPqLocal.tensorIndex][virtualControlIndex] = adjacency;
+        tn.numAdjacencies[controlPqLocal.tensorIndex]++;
+        tn.numAdjacencies[targetPqLocal.tensorIndex]++;
     }
 
 }
