@@ -84,9 +84,9 @@ long long int getContractedIndex(long long int activeStateVec1Index, long long i
     // activeStateVectorIndex is number of Pq (if tensor2 has no unused vq?)
     activeIndexInBlock = activeStateVec1Index;
     for (int i=numTensor1UnusedContractions-1; i>=0; i--){
-        int vQIndex = tensor1UnusedContractions[i];
+        int vqIndex = tensor1UnusedContractions[i];
         // the size of a block of elements in the state vector for an unused virtual qubit
-        sizeOutputHalfBlock = 1LL << (numTensor1Pq + numTensor2Pq + vQIndex);
+        sizeOutputHalfBlock = 1LL << (numTensor1Pq + numTensor2Pq + vqIndex);
         sizeActiveHalfBlock = 1LL << (numTensor1Pq + i);
         activeIsLower = (activeIndexInBlock >= sizeActiveHalfBlock); // TODO -- better to get value of qubit?
         if (activeIsLower) {
@@ -103,12 +103,14 @@ long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex,
 
     long long int sizeHalfBlock, sizeActiveHalfBlock;
     int activeIsLower;
-    long long int stateVectorIndex = 0;
+    long long int activeStatePhysicalSize = 1LL << numPq;
+    long long int indexInPhysicalQubitBlock = activeStateIndex&(activeStatePhysicalSize-1); 
+    long long int stateVectorIndex = indexInPhysicalQubitBlock;
     long long int activeIndexInBlock = activeStateIndex;
     for (int i=numUnusedContractions-1; i>=0; i--){
-        int vQIndex = unusedContractions[i];
+        int vqIndex = unusedContractions[i];
         // the size of a block of elements in the state vector for an unused virtual qubit
-        sizeHalfBlock = 1LL << (numPq + vQIndex);
+        sizeHalfBlock = 1LL << (numPq + vqIndex);
         sizeActiveHalfBlock = 1LL << (numPq + i);
         activeIsLower = (activeIndexInBlock >= sizeActiveHalfBlock); // TODO -- better to get value of qubit?
         if (activeIsLower) {
@@ -127,11 +129,11 @@ long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex,
     long long int sizeBlock, sizeReducedBlock, thisBlock, thisIndex;
     long long int stateVectorIndex = 0;
     for (int i; i<numUnusedContractions; i++){
-        int vQIndex = numUnusedContractions[i];
+        int vqIndex = numUnusedContractions[i];
         // the size of a block of elements in the state vector for an unused virtual qubit
-        sizeBlock = 1LL << (numPq + vQIndex + 1);
+        sizeBlock = 1LL << (numPq + vqIndex + 1);
         sizeReducedBlock = sizeBlock >> numContractions;
-        // TODO -- replace with activeStateIndex >> (numPq + vQIndex - numContractions)
+        // TODO -- replace with activeStateIndex >> (numPq + vqIndex - numContractions)
         thisBlock = activeStateIndex / sizeReducedBlock;
         // activeStateIndex % reducedBlocksSize = activeStateIndex&(sizeReducedBlock-1)
         thisIndex = thisBlock*sizeBlock + activeStateIndex&(sizeReducedBlock-1); 
@@ -149,7 +151,7 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
     long long int tensor2OffsetNew = tensor2Offset + (1LL << (tensor2.numPq+tensor2Contractions[vqIndex]) );
 
     printf("tensor1OffsetNew %lld tensor2OffsetNew %lld\n", tensor1OffsetNew, tensor2OffsetNew);
-    printf("pq %d contractions %d\n", tensor1.numPq, tensor1Contractions[vqIndex]);
+    printf("num pq %d contraction index %d\n", tensor1.numPq, tensor1Contractions[vqIndex]);
    
     if (vqIndex==numContractions-1){
         Qureg qureg1 = tensor1.qureg;
@@ -163,7 +165,20 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
         qreal sumReal=0;
         qreal sumImag=0;
 
-        // Contracted index = 0
+        // vqIndex == 0 
+        // Real component
+        sumReal += stateVec1Real[tensor1Offset] * 
+            stateVec2Real[tensor2Offset];
+        sumReal += -stateVec1Imag[tensor1Offset] * 
+            stateVec2Imag[tensor2Offset];
+
+        // Imag component
+        sumImag += stateVec1Imag[tensor1Offset] * 
+            stateVec2Real[tensor2Offset];
+        sumImag += stateVec1Real[tensor1Offset] * 
+            stateVec2Imag[tensor2Offset];
+
+        // vqIndex == 1 
         // Real component
         sumReal += stateVec1Real[tensor1OffsetNew] * 
             stateVec2Real[tensor2OffsetNew];
@@ -176,6 +191,7 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
         sumImag += stateVec1Real[tensor1OffsetNew] * 
             stateVec2Imag[tensor2OffsetNew];
 
+       
         Complex sum;
         sum.real = sumReal; sum.imag = sumImag;
         return sum;
@@ -243,13 +259,13 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     qreal *stateVec2Real = qureg2.stateVec.real;
     qreal *stateVec2Imag = qureg2.stateVec.imag;
 
-    for (activeStateVec1Index=0; activeStateVec1Index<activeStateVec1Size; activeStateVec1Index++) {
-        for (activeStateVec2Index=0; activeStateVec2Index<activeStateVec2Size; activeStateVec2Index++) {
+    for (activeStateVec2Index=0; activeStateVec2Index<activeStateVec2Size; activeStateVec2Index++) {
+        for (activeStateVec1Index=0; activeStateVec1Index<activeStateVec1Size; activeStateVec1Index++) {
             stateVec1Index = getStateVectorIndexFromActiveIndex(activeStateVec1Index, tensor1.numPq,
                     tensor1UnusedContractions, numTensor1UnusedContractions);
             stateVec2Index = getStateVectorIndexFromActiveIndex(activeStateVec2Index, tensor2.numPq,
                     tensor2UnusedContractions, numTensor2UnusedContractions);
-
+            printf("-------------------------\n");
             printf("t1: ai %lld si %lld\n", activeStateVec1Index, stateVec1Index);
             printf("t2: ai %lld si %lld\n", activeStateVec2Index, stateVec2Index);
 
@@ -262,6 +278,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
                     stateVec2PhysicalSize, stateVec1PhysicalSize, tensor1.numPq, tensor2.numPq,
                     tensor1UnusedContractions, tensor2UnusedContractions,
                     numTensor1UnusedContractions, numTensor2UnusedContractions);
+            printf("OUTPUT: %lld \n", contractedIndex);
             contractedQureg.stateVec.real[contractedIndex] = sum.real;
             contractedQureg.stateVec.imag[contractedIndex] = sum.imag;
         }
