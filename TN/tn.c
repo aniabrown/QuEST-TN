@@ -121,26 +121,6 @@ long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex,
     return stateVectorIndex;
 }
 
-/* OLD
-long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex, long long int activeStateVecSize,
-        int numPq,
-        int *unusedContractions, int numUnusedContractions, ){
-
-    long long int sizeBlock, sizeReducedBlock, thisBlock, thisIndex;
-    long long int stateVectorIndex = 0;
-    for (int i; i<numUnusedContractions; i++){
-        int vqIndex = numUnusedContractions[i];
-        // the size of a block of elements in the state vector for an unused virtual qubit
-        sizeBlock = 1LL << (numPq + vqIndex + 1);
-        sizeReducedBlock = sizeBlock >> numContractions;
-        // TODO -- replace with activeStateIndex >> (numPq + vqIndex - numContractions)
-        thisBlock = activeStateIndex / sizeReducedBlock;
-        // activeStateIndex % reducedBlocksSize = activeStateIndex&(sizeReducedBlock-1)
-        thisIndex = thisBlock*sizeBlock + activeStateIndex&(sizeReducedBlock-1); 
-}
-*/
-
-
 Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset, 
         long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions, 
         int numContractions, int vqIndex){
@@ -283,15 +263,30 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
             contractedQureg.stateVec.imag[contractedIndex] = sum.imag;
         }
     }
-    
-    destroyQureg(tensor1.qureg, env);
-    destroyQureg(tensor2.qureg, env);
 
+    // TODO -- Update tn adjacencies 
+
+    // Update first tensor 
+    // The output of the contraction is stored in the location of the first tensor 
+    // in the tensor array.
+    destroyQureg(tensor1.qureg, env);
     tn.tensors[tensor1Index].qureg = contractedQureg;
     tn.tensors[tensor1Index].numPq = totalNumPq;
-    tn.tensors[tensor1Index].numVq = 0;
+    tn.tensors[tensor1Index].numVq = totalNumVq;
+    tn.tensors[tensor1Index].nextVqIndex = totalNumVq;
+    tn.tensors[tensor1Index].numAdjacencies = totalNumVq;
+    
+    // Update second tensor
+    // The order of tensors in the tensor array is not changed when two tensors are contracted
+    // -- for now, just leave a gap where the second tensor was by setting numPq to 0.
+    destroyQureg(tensor2.qureg, env);
+    tn.tensors[tensor2Index].numPq = 0;
+    tn.tensors[tensor2Index].numVq = 0;
 
-    //TODO: remove adjacencies
+    // Update tn mapping between global qubit indices and (tensor, local qubit index)
+    remapTensorIndexFromGlobalPq(tn);
+    remapFirstGlobalPqIndex(tn);
+    
 }
  
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor, 
@@ -364,6 +359,28 @@ void addTensorToNetwork(int numPq, int numVq){
 
 }
 
+// Assumes each tensor has the correct numPq and updates tensorIndexFromGlobalPq to be correct
+void remapTensorIndexFromGlobalPq(TensorNetwork tn){
+    int currentPq = 0;
+    for (int i=0; i<tn.numTensors; i++){
+        Tensor tensor = tn.tensors[i];
+        for (int j=0; j<tensor.numPq; j++){
+            tn.tensorIndexFromGlobalPq[currentPq++] = i;
+        }
+    }
+
+}
+
+void remapFirstGlobalPqIndex(TensorNetwork tn){
+    globalPqOffset = 0;
+    for (int i=0; i<tn.numTensors; i++){
+        Tensor tensor = tn.tensors[i];
+        tensor.firstGlobalPqIndex = globalPqOffset;
+        globalPqOffset += tensor.numPq;
+    }
+}
+
+
 // ----- operations ------------------------------------------------------------
 
 
@@ -385,6 +402,7 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         // automatically initialized in the zero state
         initVirtualTarget(*controlTensor, virtualTargetIndex + controlTensor->numPq);
         controlTensor->nextVqIndex = controlTensor->nextVqIndex + 1;
+        printf("controlled not 1: %d %d\n", controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq);
         controlledNot(controlTensor->qureg, controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq);
         
         // do target tensor half
@@ -393,6 +411,7 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         int virtualControlIndex = targetTensor->nextVqIndex;
         initVirtualControl(*targetTensor, virtualControlIndex + targetTensor->numPq);
         targetTensor->nextVqIndex = targetTensor->nextVqIndex + 1;
+        printf("controlled not 2: %d %d\n", virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
         controlledNot(targetTensor->qureg, virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
       
         // update adjacency list. 
@@ -470,12 +489,16 @@ void printTensorNetwork(TensorNetwork tn){
     printf("%d tensors\n", tn.numTensors);
     for (int i=0; i<tn.numTensors; i++){
         Tensor tensor = tn.tensors[i];
-        printf("Tensor %d: %d physical qubits, %d virtual qubits\n", i, tensor.numPq, tensor.numVq);
-        printf("\t%d Adjacencies:\n", tn.numAdjacencies[i]);
-        QCoord *adjacencies = tn.adjacencyList[i];
-        for (int j=0; j<tn.numAdjacencies[i]; j++){
-            printf("\t\tVirtual qubit %d -> tensor %d, virtual qubit %d\n", j, adjacencies[j].tensorIndex,
-                    adjacencies[j].qIndex);
+        if (tensor.numPq==0){
+            printf("Tensor %d: DELETED BY CONTRACTION\n", i);
+        } else {
+            printf("Tensor %d: %d physical qubits, %d virtual qubits\n", i, tensor.numPq, tensor.numVq);
+            printf("\t%d Adjacencies:\n", tn.numAdjacencies[i]);
+            QCoord *adjacencies = tn.adjacencyList[i];
+            for (int j=0; j<tn.numAdjacencies[i]; j++){
+                printf("\t\tVirtual qubit %d -> tensor %d, virtual qubit %d\n", j, adjacencies[j].tensorIndex,
+                        adjacencies[j].qIndex);
+            }
         }
     }
     printf("\n");

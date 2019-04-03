@@ -53,6 +53,8 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
  */
 void addTensorToNetwork(int numPq, int numVq);
 
+void remapTensorIndexFromGlobalPq(TensorNetwork tn);
+
 
 // ----- OPERATIONS -----------------------------------------------------------
 
