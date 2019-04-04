@@ -49,28 +49,23 @@ int main (int narg, char *varg[]) {
     /*
      * TENSOR NETWORK
      */
-    int numPqPerTensor[3] = {1, 1, 1};
-    int numVqPerTensor[3] = {3, 1, 2};
+    int numPqPerTensor[2] = {1, 1};
+    int numVqPerTensor[2] = {1, 1};
     printf("\n\n--- Create Tensor Network:\n");
-    TensorNetwork tn = createTensorNetwork(3, numPqPerTensor, numVqPerTensor, env);
+    TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
-    reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
     printf("\n\n--- Apply controlled not:\n");
-    tn_controlledNot(tn, 0, 2);
     tn_controlledNot(tn, 0, 1);
-    tn_controlledNot(tn, 0, 2);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
-    reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
     printf("\n\n--- Contract tensors:\n");
     contractTensors(tn, 0, 1, env);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-    reportStateToScreen(tn.tensors[2].qureg, env, 0);
     //reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
 

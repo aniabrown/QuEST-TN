@@ -5,15 +5,23 @@
 
 #include "tn.h"
 
-void contractTensorNetwork(TensorNetwork tn){
+void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
+    // The simplest strategy -- contract tensor 0 with every other tensor in turn
+    // Output will be stored as tensor 0
+    // This is definitely not efficient in memory or time
+    for (int i=1; i<tn.numTensors; i++){
+        contractTensors(tn, 0, i, env);
+    }
 }
 
 int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index){
     int numContractions = 0;
-    // adjacencies are stored on both tensors so just search tensor1
-    for (int i=0; i<tn.numAdjacencies[tensor1Index]; i++){
-        QCoord adjacency = tn.adjacencyList[tensor1Index][i];
-        if (adjacency.tensorIndex == tensor2Index) numContractions++;
+    VqVertex *tensor1Vertex, *entangledPair;
+    tensor1Vertex = tn.tensorHeadVqVertex[tensor1Index];
+    while (tensor1Vertex != NULL){
+        entangledPair = tensor1Vertex->entangledPair;  
+        if (entangledPair->tensorIndex == tensor2Index) numContractions++;
+        tensor1Vertex = tensor1Vertex->nextInTensor;
     }
     return numContractions;
 }
@@ -28,34 +36,42 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     *tensor2Contractions = malloc(numContractions*sizeof(int));
     
     // malloc space for array of virtual qubits on each tensor that will not be contracted
-    *numTensor1UnusedContractions = tn.numAdjacencies[tensor1Index] - numContractions;
-    *numTensor2UnusedContractions = tn.numAdjacencies[tensor2Index] - numContractions;
+    *numTensor1UnusedContractions = tn.numEntanglements[tensor1Index] - numContractions;
+    *numTensor2UnusedContractions = tn.numEntanglements[tensor2Index] - numContractions;
 
     *tensor1UnusedContractions = malloc(*numTensor1UnusedContractions *
             sizeof(int));
     *tensor2UnusedContractions = malloc(*numTensor1UnusedContractions *
             sizeof(int));
 
-    int count=0;
+    int contractionCount=0;
     int unusedCount=0;
+    int vertexCount=0;
 
-    for (int i=0; i<tn.numAdjacencies[tensor1Index]; i++){
-        QCoord adjacency = tn.adjacencyList[tensor1Index][i];
-        if (adjacency.tensorIndex == tensor2Index) {
-            *tensor1Contractions[count++]=i;
+    VqVertex *tensorVertex, *entangledPair;
+    tensorVertex = tn.tensorHeadVqVertex[tensor1Index];
+    while (tensorVertex != NULL){
+        entangledPair = tensorVertex->entangledPair;  
+        if (entangledPair->tensorIndex == tensor2Index) {
+            *tensor1Contractions[contractionCount++]=vertexCount++;
         } else {
-            *tensor1UnusedContractions[unusedCount++]=i;
+            *tensor1UnusedContractions[unusedCount++]=vertexCount++;
         }
+        tensorVertex = tensorVertex->nextInTensor;
     }
-    count=0;
+
+    contractionCount=0;
     unusedCount=0;
-    for (int i=0; i<tn.numAdjacencies[tensor2Index]; i++){
-        QCoord adjacency = tn.adjacencyList[tensor2Index][i];
-        if (adjacency.tensorIndex == tensor1Index) {
-            *tensor2Contractions[count++]=i;
+    vertexCount=0;
+    tensorVertex = tn.tensorHeadVqVertex[tensor2Index];
+    while (tensorVertex != NULL){
+        entangledPair = tensorVertex->entangledPair;  
+        if (entangledPair->tensorIndex == tensor1Index) {
+            *tensor2Contractions[contractionCount++]=vertexCount++;
         } else {
-            *tensor2UnusedContractions[unusedCount++]=i;
+            *tensor2UnusedContractions[unusedCount++]=vertexCount++;
         }
+        tensorVertex = tensorVertex->nextInTensor;
     }
     printf("tensor1contracitons in function: %d\n", *tensor1Contractions[0]);
 }
@@ -197,6 +213,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
 
     Tensor tensor1 = tn.tensors[tensor1Index];
     Tensor tensor2 = tn.tensors[tensor2Index]; 
+    Tensor outputTensor;
 
     int numContractions = getNumContractions(tn, tensor1Index, tensor2Index);
     printf("numContractions: %d\n", numContractions);
@@ -264,17 +281,36 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
         }
     }
 
-    // TODO -- Update tn adjacencies 
+    // Update vqVertices in tn lists
+    // first tensor
+    VqVertex *tail=NULL;
+    int foundHead=0;
+    if (numTensor1UnusedContractions > 0){
+        removeContractedVqVertices(tn, tensor1Index, tn.tensorHeadVqVertex[tensor1Index],
+                tensor1UnusedContractions, &tail, &foundHead);
+    }
+    if (numTensor2UnusedContractions > 0){
+        tail->nextInTensor = tn.tensorHeadVqVertex[tensor2Index];
+        removeContractedVqVertices(tn, tensor2Index, tail,
+                tensor2UnusedContractions, &tail, &foundHead);
+    } 
+    tn.tensorTailVqVertex[tensor1Index] = tail;
+    if (tail != NULL) tail->nextInTensor = NULL;
+   
+    // second tensor 
+    removeAllVqVertices(tn, tensor2Index);
+
 
     // Update first tensor 
     // The output of the contraction is stored in the location of the first tensor 
     // in the tensor array.
     destroyQureg(tensor1.qureg, env);
-    tn.tensors[tensor1Index].qureg = contractedQureg;
-    tn.tensors[tensor1Index].numPq = totalNumPq;
-    tn.tensors[tensor1Index].numVq = totalNumVq;
-    tn.tensors[tensor1Index].nextVqIndex = totalNumVq;
-    tn.tensors[tensor1Index].numAdjacencies = totalNumVq;
+    outputTensor.qureg = contractedQureg;
+    outputTensor.numPq = totalNumPq;
+    outputTensor.numVq = totalNumVq;
+    outputTensor.nextVqIndex = totalNumVq;
+    tn.numEntanglements[tensor1Index] = totalNumVq;
+    tn.tensors[tensor1Index] = outputTensor;
     
     // Update second tensor
     // The order of tensors in the tensor array is not changed when two tensors are contracted
@@ -282,6 +318,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     destroyQureg(tensor2.qureg, env);
     tn.tensors[tensor2Index].numPq = 0;
     tn.tensors[tensor2Index].numVq = 0;
+
 
     // Update tn mapping between global qubit indices and (tensor, local qubit index)
     remapTensorIndexFromGlobalPq(tn);
@@ -297,8 +334,9 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
 
     // allocate memory in tensor object
     tn.tensors = malloc( numTensors*sizeof(*(tn.tensors)) );
-    tn.adjacencyList = malloc( numTensors*sizeof(*(tn.adjacencyList)) );
-    tn.numAdjacencies = malloc( numTensors*sizeof(*(tn.numAdjacencies)) );
+    tn.tensorHeadVqVertex = malloc( numTensors*sizeof(*(tn.tensorHeadVqVertex)) );
+    tn.tensorTailVqVertex = malloc( numTensors*sizeof(*(tn.tensorTailVqVertex)) );
+    tn.numEntanglements = malloc( numTensors*sizeof(*(tn.numEntanglements)) );
 
     // calculate total number of qubits in system for qubits given per tensor
     int numTotalPq = 0;
@@ -340,18 +378,12 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
         tmpTensor.nextVqIndex = 0;
 
         tn.tensors[i] = tmpTensor;
-        // The adjacency list per tensor will never be larger than numTotalVq so allocate
-        // that much memory for now. 
-        // For large numbers of virtual qubits may be more efficient to reallocate memory
-        // each time a new element is added to this list instead.
-        tn.adjacencyList[i] = malloc( numTotalVq*sizeof(*(tn.adjacencyList[i])) );
-        tn.numAdjacencies[i] = 0;
+        tn.tensorHeadVqVertex[i] = NULL;
+        tn.numEntanglements[i] = 0;
 
         globalPqOffset += tmpTensor.numPq;
     }
 
-    // TODO: consider populating adjacency list with null values
-    
     return tn;
 }
  
@@ -372,7 +404,7 @@ void remapTensorIndexFromGlobalPq(TensorNetwork tn){
 }
 
 void remapFirstGlobalPqIndex(TensorNetwork tn){
-    globalPqOffset = 0;
+    int globalPqOffset = 0;
     for (int i=0; i<tn.numTensors; i++){
         Tensor tensor = tn.tensors[i];
         tensor.firstGlobalPqIndex = globalPqOffset;
@@ -380,6 +412,46 @@ void remapFirstGlobalPqIndex(TensorNetwork tn){
     }
 }
 
+void removeAllVqVertices(TensorNetwork tn, int tensorIndex){
+    VqVertex *prevVqVertex;
+    VqVertex *vqVertex = tn.tensorHeadVqVertex[tensorIndex];
+    while (vqVertex != NULL){
+        prevVqVertex = vqVertex;
+        vqVertex = vqVertex->nextInTensor;
+        free(prevVqVertex);
+    }
+}
+
+void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, VqVertex *startingVqVertex,
+        int *unusedContractions, VqVertex **tail, int *foundHead){
+
+    VqVertex *vqVertex, *prevVqVertex, *prevVqVertexToKeep;
+    int vqVertexCount = 0;
+    int unusedContractionCount = 0;
+    vqVertex = startingVqVertex;
+    // Search through vertices and keep those which are in unusedContractions.
+    // Free vertices which no longer need to be stored
+    while (vqVertex != NULL){
+        if (vqVertexCount++ == unusedContractions[unusedContractionCount]) {
+            // keep 
+            if (!(*foundHead)) {
+                tn.tensorHeadVqVertex[tensorIndex] = vqVertex;
+                *foundHead = 1;
+            }
+            prevVqVertexToKeep->nextInTensor = vqVertex;
+            prevVqVertexToKeep = vqVertex;
+            vqVertex = vqVertex->nextInTensor;
+            unusedContractionCount++;
+        } else {
+            // discard
+            prevVqVertex = vqVertex;
+            vqVertex = vqVertex->nextInTensor;
+            free(prevVqVertex);
+        }
+    }
+    *tail = prevVqVertexToKeep;
+    prevVqVertexToKeep->nextInTensor=NULL;
+} 
 
 // ----- operations ------------------------------------------------------------
 
@@ -413,21 +485,38 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         targetTensor->nextVqIndex = targetTensor->nextVqIndex + 1;
         printf("controlled not 2: %d %d\n", virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
         controlledNot(targetTensor->qureg, virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
-      
+     
+        // TODO -- change t1, t2 to control/target 
         // update adjacency list. 
-        // Only store the connection between virtualTargetIndex to virtualControlIndex, not the other direction
-        // TODO: May want to store both diretions 
-        // virtualTargetIndex -> virtualControlIndex corresponds to the tensor with the control pq pointing to
-        // the tensor with the target pq
-        QCoord adjacency;
-        adjacency.tensorIndex = targetPqLocal.tensorIndex;
-        adjacency.qIndex = virtualControlIndex; 
-        tn.adjacencyList[controlPqLocal.tensorIndex][virtualTargetIndex] = adjacency;
-        adjacency.tensorIndex = controlPqLocal.tensorIndex;
-        adjacency.qIndex = virtualTargetIndex; 
-        tn.adjacencyList[targetPqLocal.tensorIndex][virtualControlIndex] = adjacency;
-        tn.numAdjacencies[controlPqLocal.tensorIndex]++;
-        tn.numAdjacencies[targetPqLocal.tensorIndex]++;
+        // tensor1
+        VqVertex *tensor1VqVertex = malloc(sizeof(*tensor1VqVertex));
+        tensor1VqVertex->nextInTensor = NULL;
+        tensor1VqVertex->tensorIndex = targetPqLocal.tensorIndex;
+        if (tn.tensorTailVqVertex[targetPqLocal.tensorIndex] != NULL){
+                tn.tensorTailVqVertex[targetPqLocal.tensorIndex]->nextInTensor = tensor1VqVertex;
+        }
+        tn.tensorTailVqVertex[targetPqLocal.tensorIndex] = tensor1VqVertex;
+        if (tn.numEntanglements[targetPqLocal.tensorIndex]==0) {
+            tn.tensorHeadVqVertex[targetPqLocal.tensorIndex] = tensor1VqVertex;
+        }
+
+        // tensor2
+        VqVertex *tensor2VqVertex = malloc(sizeof(*tensor2VqVertex));
+        tensor2VqVertex->nextInTensor = NULL;
+        tensor2VqVertex->tensorIndex = controlPqLocal.tensorIndex;
+        if (tn.tensorTailVqVertex[controlPqLocal.tensorIndex] != NULL){
+                tn.tensorTailVqVertex[controlPqLocal.tensorIndex]->nextInTensor = tensor2VqVertex;
+        }
+        tn.tensorTailVqVertex[controlPqLocal.tensorIndex] = tensor2VqVertex;
+        if (tn.numEntanglements[controlPqLocal.tensorIndex]==0) {
+            tn.tensorHeadVqVertex[controlPqLocal.tensorIndex] = tensor2VqVertex;
+        }
+
+        tensor1VqVertex->entangledPair = tensor2VqVertex;
+        tensor2VqVertex->entangledPair = tensor1VqVertex;
+
+        tn.numEntanglements[controlPqLocal.tensorIndex]++;
+        tn.numEntanglements[targetPqLocal.tensorIndex]++;
     }
 
 }
@@ -484,6 +573,17 @@ QCoord getLocalPq(TensorNetwork tn, int globalPq){
 
 // ----- reporting ------------------------------------------------------------
 
+int getVqVertexIndex(TensorNetwork tn, VqVertex *vqVertex){
+    int verticesUntilEndInclusive=0;
+    int totalVertices = tn.numEntanglements[vqVertex->tensorIndex];
+    if (vqVertex == NULL) return -1;
+    while (vqVertex != NULL){
+        verticesUntilEndInclusive++;
+        vqVertex = vqVertex->nextInTensor;
+    }
+    return totalVertices - verticesUntilEndInclusive;
+}
+
 void printTensorNetwork(TensorNetwork tn){
     printf("\n----- TensorNetwork -------------------- \n");
     printf("%d tensors\n", tn.numTensors);
@@ -493,11 +593,17 @@ void printTensorNetwork(TensorNetwork tn){
             printf("Tensor %d: DELETED BY CONTRACTION\n", i);
         } else {
             printf("Tensor %d: %d physical qubits, %d virtual qubits\n", i, tensor.numPq, tensor.numVq);
-            printf("\t%d Adjacencies:\n", tn.numAdjacencies[i]);
-            QCoord *adjacencies = tn.adjacencyList[i];
-            for (int j=0; j<tn.numAdjacencies[i]; j++){
-                printf("\t\tVirtual qubit %d -> tensor %d, virtual qubit %d\n", j, adjacencies[j].tensorIndex,
-                        adjacencies[j].qIndex);
+            printf("\t%d Entanglements:\n", tn.numEntanglements[i]);
+            
+            VqVertex *vqVertex = tn.tensorHeadVqVertex[i];
+            VqVertex *entangledPair;
+            int vqCount=0;
+            while (vqVertex != NULL){
+                entangledPair = vqVertex->entangledPair;  
+                int entangledIndex = getVqVertexIndex(tn, entangledPair);
+                printf("\t\tVirtual qubit %d -> tensor %d, virtual qubit %d\n", 
+                        vqCount++, entangledPair->tensorIndex, entangledIndex);
+                vqVertex = vqVertex->nextInTensor;
             }
         }
     }

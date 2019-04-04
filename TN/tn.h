@@ -20,6 +20,12 @@ typedef struct QCoord {
     int qIndex;
 } QCoord;
 
+typedef struct VqVertex{
+    struct VqVertex *nextInTensor;
+    struct VqVertex *entangledPair;
+    int tensorIndex;
+} VqVertex;
+
 typedef struct Tensor {
     Qureg qureg;
     int numPq;
@@ -32,14 +38,15 @@ typedef struct TensorNetwork {
     int numTensors;
     Tensor *tensors;
     int *tensorIndexFromGlobalPq;
-    QCoord **adjacencyList;
-    int *numAdjacencies;
+    VqVertex **tensorHeadVqVertex;
+    VqVertex **tensorTailVqVertex;
+    int *numEntanglements;
 } TensorNetwork;
 
 
 // ----- TENSOR NETWORK -------------------------------------------------------
 
-void contractTensorNetwork(TensorNetwork tn);
+void contractTensorNetwork(TensorNetwork tn, QuESTEnv env);
 
 /**
     replaces the tensor object at index tensor1 with the contraction of tensor1 and tensor 2
@@ -54,6 +61,13 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
 void addTensorToNetwork(int numPq, int numVq);
 
 void remapTensorIndexFromGlobalPq(TensorNetwork tn);
+
+void remapFirstGlobalPqIndex(TensorNetwork tn);
+
+void removeAllVqVertices(TensorNetwork tn, int tensorIndex);
+
+void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, VqVertex *startingVqVertex,
+        int *unusedContractions, VqVertex **tail, int *foundHead);
 
 
 // ----- OPERATIONS -----------------------------------------------------------
