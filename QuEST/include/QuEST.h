@@ -1548,6 +1548,8 @@ qreal calcPurity(Qureg qureg);
  */
 qreal calcFidelity(Qureg qureg, Qureg pureState);
 
+void statevec_initStateDebugFromOffset (Qureg qureg, int tensorIndexOffset);
+
 
 #ifdef __cplusplus
 }

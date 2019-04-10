@@ -24,6 +24,7 @@ int main (int narg, char *varg[]) {
     //initStateDebug(qubits);
     initZeroState(qubits);
     pauliX(qubits, 0);
+    rotateZ(qubits, 0, 0.3);
     //hadamard(qubits, 0);
     //hadamard(qubits, 2);
     reportStateToScreen(qubits, env, 0);
@@ -42,7 +43,6 @@ int main (int narg, char *varg[]) {
     controlledNot(qubits, 0, 2);
     controlledNot(qubits, 0, 1);
     controlledNot(qubits, 0, 2);
-    //controlledNot(qubits, 0, 2);
     reportStateToScreen(qubits, env, 0);
 
 
@@ -72,12 +72,11 @@ int main (int narg, char *varg[]) {
     printTensorNetwork(tn);
 
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-    reportStateToScreen(tn.tensors[2].qureg, env, 0);
+    reportStateToScreen(tn.tensors[1].qureg, env, 0);
     
-    //printf("\n\n--- Contract tensors 0 and 1:\n");
-    //contractTensors(tn, 0, 1, env);
-    //reportStateToScreen(tn.tensors[1].qureg, env, 0);
-
+    printf("\n\n--- Contract tensors 0 and 1:\n");
+    contractTensors(tn, 0, 1, env);
+    reportStateToScreen(tn.tensors[0].qureg, env, 0);
 
 
     /*

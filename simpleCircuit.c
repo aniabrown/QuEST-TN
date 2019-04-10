@@ -20,11 +20,18 @@ int main (int narg, char *varg[]) {
      * PREPARE QUBIT SYSTEM
      */
 
-    Qureg qubits = createQureg(3, env);
+    Qureg qubits = createQureg(2, env);
     //initStateDebug(qubits);
     initZeroState(qubits);
-    pauliX(qubits, 0);
-    //hadamard(qubits, 0);
+    hadamard(qubits, 0);
+    rotateZ(qubits, 0, 0.3); 
+    hadamard(qubits, 1);
+    //rotateZ(qubits, 1, 0.3); 
+    //initStateDebug(qubits);
+    //rotateZ(qubits, 1, 0.6); 
+    qreal totalProb=calcTotalProb(qubits);
+    printf("totalProb: %f\n", totalProb);
+//    pauliX(qubits, 0);
     //hadamard(qubits, 2);
     reportStateToScreen(qubits, env, 0);
 
@@ -39,9 +46,7 @@ int main (int narg, char *varg[]) {
      * APPLY CIRCUIT
      */
 
-    controlledNot(qubits, 0, 2);
     controlledNot(qubits, 0, 1);
-    controlledNot(qubits, 0, 2);
     //controlledNot(qubits, 0, 2);
     reportStateToScreen(qubits, env, 0);
 

@@ -53,9 +53,9 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     while (tensorVertex != NULL){
         entangledPair = tensorVertex->entangledPair;  
         if (entangledPair->tensorIndex == tensor2Index) {
-            *tensor1Contractions[contractionCount++]=vertexCount++;
+            (*tensor1Contractions)[contractionCount++]=vertexCount++;
         } else {
-            *tensor1UnusedContractions[unusedCount++]=vertexCount++;
+            (*tensor1UnusedContractions)[unusedCount++]=vertexCount++;
         }
         tensorVertex = tensorVertex->nextInTensor;
     }
@@ -67,9 +67,9 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     while (tensorVertex != NULL){
         entangledPair = tensorVertex->entangledPair;  
         if (entangledPair->tensorIndex == tensor1Index) {
-            *tensor2Contractions[contractionCount++]=vertexCount++;
+            (*tensor2Contractions)[contractionCount++]=vertexCount++;
         } else {
-            *tensor2UnusedContractions[unusedCount++]=vertexCount++;
+            (*tensor2UnusedContractions)[unusedCount++]=vertexCount++;
         }
         tensorVertex = tensorVertex->nextInTensor;
     }
@@ -78,7 +78,6 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
 
 long long int getContractedIndex(long long int activeStateVec1Index, long long int activeStateVec2Index,
      long long int stateVec1PhysicalSize, long long int stateVec2PhysicalSize, int numTensor1Pq, int numTensor2Pq,
-     int *tensor1UnusedContractions, int *tensor2UnusedContractions, 
      int numTensor1UnusedContractions, int numTensor2UnusedContractions){
             
     long long int contractedIndex;
@@ -93,18 +92,20 @@ long long int getContractedIndex(long long int activeStateVec1Index, long long i
     stateVec1IndexInPq = activeStateVec1Index&(stateVec1PhysicalSize-1);
     stateVec2IndexInPq = activeStateVec2Index&(stateVec2PhysicalSize-1);
 
+    printf("getOutputIndex: t1psize %lld t2psize %lld\n", stateVec1PhysicalSize, stateVec2PhysicalSize);
     contractedIndex = stateVec2IndexInPq*stateVec2PhysicalSize + stateVec1IndexInPq;
+    printf("getOuputIndex: contractedIndex %lld\n", contractedIndex);
 
     // TODO -- missing unused tensor 2 virtual qubits
     // TODO -- seems inefficient given the only thing changing between this and
     // activeStateVectorIndex is number of Pq (if tensor2 has no unused vq?)
     activeIndexInBlock = activeStateVec1Index;
     for (int i=numTensor1UnusedContractions-1; i>=0; i--){
-        int vqIndex = tensor1UnusedContractions[i];
         // the size of a block of elements in the state vector for an unused virtual qubit
-        sizeOutputHalfBlock = 1LL << (numTensor1Pq + numTensor2Pq + vqIndex);
+        sizeOutputHalfBlock = 1LL << (numTensor1Pq + numTensor2Pq + i);
         sizeActiveHalfBlock = 1LL << (numTensor1Pq + i);
         activeIsLower = (activeIndexInBlock >= sizeActiveHalfBlock); // TODO -- better to get value of qubit?
+        printf("sizeOutput %lld sizeActive %lld isLower %d\n", sizeOutputHalfBlock, sizeActiveHalfBlock, activeIsLower);
         if (activeIsLower) {
             contractedIndex += sizeOutputHalfBlock; // TODO -- replace with predicate
             activeIndexInBlock -= sizeActiveHalfBlock;
@@ -141,11 +142,12 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
         long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions, 
         int numContractions, int vqIndex){
 
-    printf("recursive step. vqIndex: %d\n", vqIndex);
+    printf("recursive step. vqIndex: %d t1vqToContract %d\n", vqIndex, tensor1Contractions[vqIndex]);
     //TODO -- numPq will need to be numPq + numUnusedLowVq
     long long int tensor1OffsetNew = tensor1Offset + (1LL << (tensor1.numPq+tensor1Contractions[vqIndex]) );
     long long int tensor2OffsetNew = tensor2Offset + (1LL << (tensor2.numPq+tensor2Contractions[vqIndex]) );
 
+    printf("tensor1Offset %lld tensor2Offset %lld\n", tensor1Offset, tensor2Offset);
     printf("tensor1OffsetNew %lld tensor2OffsetNew %lld\n", tensor1OffsetNew, tensor2OffsetNew);
     printf("num pq %d contraction index %d\n", tensor1.numPq, tensor1Contractions[vqIndex]);
    
@@ -272,10 +274,9 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
                 tensor1Contractions, tensor2Contractions, numContractions, 0);
 
             contractedIndex = getContractedIndex(activeStateVec1Index, activeStateVec2Index, 
-                    stateVec2PhysicalSize, stateVec1PhysicalSize, tensor1.numPq, tensor2.numPq,
-                    tensor1UnusedContractions, tensor2UnusedContractions,
+                    stateVec1PhysicalSize, stateVec2PhysicalSize, tensor1.numPq, tensor2.numPq,
                     numTensor1UnusedContractions, numTensor2UnusedContractions);
-            printf("OUTPUT: %lld \n", contractedIndex);
+            printf("OUTPUT: %lld VALUE: %f\n", contractedIndex, sum.real);
             contractedQureg.stateVec.real[contractedIndex] = sum.real;
             contractedQureg.stateVec.imag[contractedIndex] = sum.imag;
         }
@@ -287,12 +288,12 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     int foundHead=0;
     if (numTensor1UnusedContractions > 0){
         removeContractedVqVertices(tn, tensor1Index, tn.tensorHeadVqVertex[tensor1Index],
-                tensor1UnusedContractions, &tail, &foundHead);
+                tensor1UnusedContractions, numTensor1UnusedContractions, &tail, &foundHead);
     }
     if (numTensor2UnusedContractions > 0){
         tail->nextInTensor = tn.tensorHeadVqVertex[tensor2Index];
         removeContractedVqVertices(tn, tensor2Index, tail,
-                tensor2UnusedContractions, &tail, &foundHead);
+                tensor2UnusedContractions, numTensor2UnusedContractions, &tail, &foundHead);
     } 
     tn.tensorTailVqVertex[tensor1Index] = tail;
     if (tail != NULL) tail->nextInTensor = NULL;
@@ -368,8 +369,13 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
         // create qureg object and initialize to zero
         tmpTensor.qureg = createQureg(tmpTensor.numPq + tmpTensor.numVq, env);
         initZeroState(tmpTensor.qureg);
-        //if (i==0) hadamard(tmpTensor.qureg, 1);
+        //if (i==0)statevec_initStateDebugFromOffset(tmpTensor.qureg, 0);
+        //if (i==1) hadamard(tmpTensor.qureg, 0);
+        //if (i==1) rotateZ(tmpTensor.qureg, 0, 0.3);
+        //if (i==0) hadamard(tmpTensor.qureg, 0);
         if (i==0) pauliX(tmpTensor.qureg, 0);
+        if (i==0) rotateZ(tmpTensor.qureg, 0, 0.3);
+        //if (i==1)statevec_initStateDebugFromOffset(tmpTensor.qureg, 2);
 
         // for quick conversion to local index from global index
         tmpTensor.firstGlobalPqIndex = globalPqOffset;
@@ -379,6 +385,7 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
 
         tn.tensors[i] = tmpTensor;
         tn.tensorHeadVqVertex[i] = NULL;
+        tn.tensorTailVqVertex[i] = NULL;
         tn.numEntanglements[i] = 0;
 
         globalPqOffset += tmpTensor.numPq;
@@ -423,25 +430,34 @@ void removeAllVqVertices(TensorNetwork tn, int tensorIndex){
 }
 
 void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, VqVertex *startingVqVertex,
-        int *unusedContractions, VqVertex **tail, int *foundHead){
+        int *unusedContractions, int numUnusedContractions, VqVertex **tail, int *foundHead){
 
-    VqVertex *vqVertex, *prevVqVertex, *prevVqVertexToKeep;
+    VqVertex *vqVertex, *prevVqVertex, *prevVqVertexToKeep=NULL;
     int vqVertexCount = 0;
     int unusedContractionCount = 0;
     vqVertex = startingVqVertex;
     // Search through vertices and keep those which are in unusedContractions.
     // Free vertices which no longer need to be stored
     while (vqVertex != NULL){
-        if (vqVertexCount++ == unusedContractions[unusedContractionCount]) {
-            // keep 
-            if (!(*foundHead)) {
-                tn.tensorHeadVqVertex[tensorIndex] = vqVertex;
-                *foundHead = 1;
+        if (unusedContractionCount<numUnusedContractions) {
+            if (vqVertexCount++ == unusedContractions[unusedContractionCount]) {
+                // keep 
+                if (!(*foundHead)) {
+                    tn.tensorHeadVqVertex[tensorIndex] = vqVertex;
+                    *foundHead = 1;
+                }
+                if (prevVqVertexToKeep!=NULL){
+                    prevVqVertexToKeep->nextInTensor = vqVertex;
+                }
+                prevVqVertexToKeep = vqVertex;
+                vqVertex = vqVertex->nextInTensor;
+                unusedContractionCount++;
+            } else {
+                // discard
+                prevVqVertex = vqVertex;
+                vqVertex = vqVertex->nextInTensor;
+                free(prevVqVertex);
             }
-            prevVqVertexToKeep->nextInTensor = vqVertex;
-            prevVqVertexToKeep = vqVertex;
-            vqVertex = vqVertex->nextInTensor;
-            unusedContractionCount++;
         } else {
             // discard
             prevVqVertex = vqVertex;
@@ -449,6 +465,7 @@ void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, VqVertex *sta
             free(prevVqVertex);
         }
     }
+
     *tail = prevVqVertexToKeep;
     prevVqVertexToKeep->nextInTensor=NULL;
 } 

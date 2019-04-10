@@ -67,7 +67,7 @@ void remapFirstGlobalPqIndex(TensorNetwork tn);
 void removeAllVqVertices(TensorNetwork tn, int tensorIndex);
 
 void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, VqVertex *startingVqVertex,
-        int *unusedContractions, VqVertex **tail, int *foundHead);
+        int *unusedContractions, int numUnusedContractions, VqVertex **tail, int *foundHead);
 
 
 // ----- OPERATIONS -----------------------------------------------------------
