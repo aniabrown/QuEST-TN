@@ -394,10 +394,6 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
     return tn;
 }
  
-void addTensorToNetwork(int numPq, int numVq){
-
-}
-
 // Assumes each tensor has the correct numPq and updates tensorIndexFromGlobalPq to be correct
 void remapTensorIndexFromGlobalPq(TensorNetwork tn){
     int currentPq = 0;
