@@ -106,7 +106,8 @@ void initVirtualControl(Tensor tensor, int vqIndex);
 
 void removeAllVqVertices(TensorNetwork tn, int tensorIndex);
 
-void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, VqVertex *startingVqVertex,
+void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensorIndex, 
+        VqVertex *startingVqVertex, VqVertex *prevVqVertexToKeep,
         int *unusedContractions, int numUnusedContractions, VqVertex **tail, int *foundHead);
 
 
@@ -118,8 +119,10 @@ void remapTensorIndexFromGlobalPq(TensorNetwork tn);
 
 void remapFirstGlobalPqIndex(TensorNetwork tn);
 
+int getVqVertexIndex(TensorNetwork tn, VqVertex *vqVertex);
 
 // ----- reporting ------------------------------------------------------------
+
 
 void printTensorNetwork(TensorNetwork tn);
 

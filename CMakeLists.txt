@@ -25,7 +25,7 @@ endif()
 add_subdirectory(TN)
 
 # Create user executable
-add_executable(demo simpleCircuit3.c ${TN_SRC})
+add_executable(demo simpleCircuit4.c ${TN_SRC})
 
 target_include_directories(demo
     PRIVATE TN
