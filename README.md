@@ -15,7 +15,7 @@ Copy or clone this repository to your machine. E.g. in the desired directory, en
 git clone https://github.com/aniabrown/QuEST-TN.git
 cd QuEST-TN
 ```
-at terminal. You can then compile the [example](examples/tutorial_example.c) using
+at terminal. You can then compile the [simplest test circuit](examples/timeSliceTNCircuits/testCircuit1.c) using
 ```bash
 mkdir build
 cd build
@@ -36,21 +36,16 @@ or, to remove the build directory entirely, from the root directory
 rm -r build
 ```
 
-The program will print information about your execution environment and some simple operations on a three qubit system. See the [tutorial](examples/README.md) for a better introduction. 
+The program will print information about your execution environment. It will then apply the same operations, first on a 2 qubit QuEST Qureg object and then on two tensors each containing one qubit. 
 
-Additionally, you can run unit tests to see if QuEST runs correctly in your environment, using
-```bash
-make test
-```
-
-This requires Python 3.4+. 
+See the [tutorial](examples/timeSliceTNCircuits/README.md) for a better introduction. 
 
 ## Documentation
 
-View the API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html)
+View the API [here](https://aniabrown.github.io/QuEST-TN/QuEST__tn_8h.html)
 
 ## Licence
 
-QuEST-TN is released under a [MIT Licence](https://github.com/quest-kit/QuEST/blob/master/LICENCE.txt)
+QuEST-TN is released under a [MIT Licence](https://github.com/aniabrown/QuEST-TN/blob/master/LICENCE.txt)
 
 
