@@ -13,6 +13,14 @@
 # define DEBUG_PRINT(x) do {} while (0)
 #endif
 
+
+/** Contract all tensors in a tensor network one by one. 
+ * The simplest strategy -- contract tensor 0 with every other tensor in turn
+ * Output will be stored as tensor 0.
+ *
+ * @param[in,out] TensorNetwork tn tensor network to contract
+ * @param[in] QuESTEnv env QuEST environment object
+ */
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
     for (int i=1; i<tn.numTensors; i++){
         contractTensors(tn, 0, i, env);
@@ -258,7 +266,6 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
     }
 }
 
-
 void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuESTEnv env){
     // always store new tensor in the smaller tensor index
     if (tensor2Index < tensor1Index){
@@ -392,6 +399,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     remapFirstGlobalPqIndex(tn);
     
 }
+ 
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor, 
         QuESTEnv env){
 

@@ -1,5 +1,5 @@
-# ifndef TN_H
-# define TN_H
+# ifndef QUEST_TN
+# define QUEST_TN
 
 #include "QuEST.h"
 
@@ -59,80 +59,148 @@ typedef struct TensorNetwork {
 
 // ----- TENSOR NETWORK INITIALISATION -------------------------------------------------------
 
+/** Allocate memory for and initialize a new tensor network object given the number
+ * of physical qubits and maximum number of virtual qubits in each tensor. Initialise all
+ * physical qubits to the zero state and virtual qubits to an undefined state.
+ *
+ * @param[in] int numTensors the number of tensors in the tensor network
+ * @param[in] int* numPqPerTensor an array of values corresponding to the number of physical
+ *      qubits in each tensor
+ * @param[in] int* numVqPerTensor an array of values corresponding to the maximum number of
+ *      virtual qubits that could be used in each tensor
+ * @param[in] QuESTEnv env QuEST environment object
+ *
+ */
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor,
         QuESTEnv env);
 
-/** probably ineffient, but consider including for utility
- */
-//void addTensorToNetwork(int numPq, int numVq);
 
 // ----- TENSOR NETWORK CLEANUP -------------------------------------------------------
+
+// TODO
 
 
 // ----- TENSOR CONTRACTIONS -------------------------------------------------------
 
+
+/** Contract all tensors in a tensor network one by one.
+ * The simplest strategy -- contract tensor 0 with every other tensor in turn
+ * Output will be stored as tensor 0.
+ *
+ * @param[in,out] TensorNetwork tn tensor network to contract
+ * @param[in] QuESTEnv env QuEST environment object
+ */
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env);
 
 /**
-    replaces the tensor object at index tensor1 with the contraction of tensor1 and tensor 2
+    Replaces the tensor object at index tensor1 in the tensor network with the contraction 
+    of tensor1 and tensor 2. 
+    All virtual qubits linking the two tensors are contracted in this operation. There may
+    be virtual qubits left over after the contraction, corresponding to entanglement with 
+    other tensors in the network.
+
+    The ordering of qubits in the output tensor from lowest to highest is as follows: 
+    tensor1 physical qubits, tensor2 physical qubits, tensor1 virtual qubits, 
+    tensor2 virtual qubits.
+
+    @param[in, out] TensorNetwork tn the tensor network the two tensors belong to
+    @param[in] int tensor1 the index of the first tensor to contract
+    @param[in] int tensor1 the index of the second tensor to contract
+    @param[in] QuESTEnv env the QuEST environment object 
 */ 
 void contractTensors(TensorNetwork tn, int tensor1, int tensor2, QuESTEnv env);
-
-int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index);
-
-void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Index, int numContractions,
-    int **tensor1Contractions, int **tensor2Contractions,
-    int *numTensor1UncontractedVqs, int *numTensor2UncontractedVqs,
-    int **tensor1UncontractedVqs, int **tensor2UncontractedVqs);
-
-long long int getContractedIndex(long long int activeStateVec1Index, long long int activeStateVec2Index,
-     long long int stateVec1PhysicalSize, long long int stateVec2PhysicalSize, int numTensor1Pq, int numTensor2Pq,
-     int numTensor1UncontractedVqs, int numTensor2UncontractedVqs);
-
-long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex,
-    int numPq, int *uncontractedVqs, int numUncontractedVqs);
-
-Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset,
-    long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions,
-    int numContractions, int vqIndex);
 
 
 // ----- GATES -----------------------------------------------------------
 
+
+/** Apply the controlled not (single control, single target) gate, also
+ * known as the c-X, c-sigma-X, c-Pauli-X and c-bit-flip gate on qubits in
+ * a tensor network.
+ *
+ * If the two qubits are in different tensors, also track the entanglement
+ * introduced between those tensors using virtual qubits. 
+ *
+ * Note that the control and target qubits should be supplied as global qubit indices
+ * over all physical qubits in all tensors.
+ *
+ * This applies pauliX to the target qubit if the control qubit has value 1.
+ * This effects the two-qubit unitary
+ * \f[
+ * \begin{pmatrix}
+ * 1 \\
+ * & 1 \\\
+ * & & & 1 \\
+ * & & 1
+ * \end{pmatrix}
+ * \f]
+ * on the control and target qubits.
+ *
+    \f[
+    \setlength{\fboxrule}{0.01pt}
+    \fbox{
+                \begin{tikzpicture}[scale=.5]
+                \node[draw=none] at (-3.5, 2) {control};
+                \node[draw=none] at (-3.5, 0) {target};
+                \draw (-2, 2) -- (2, 2);
+                \draw[fill=black] (0, 2) circle (.2);
+                \draw (0, 2) -- (0, -.5);
+
+                \draw (-2,0) -- (2, 0);
+                \draw (0, 0) circle (.5);
+                \end{tikzpicture}
+    }
+    \f]
+ *
+ * @param[in,out] TensorNetwork tn the tensor network containing the control and target qubits
+ * @param[in] controlQubit nots the target if this qubit is 1
+ * @param[in] targetQubit qubit to not
+ * @throws exitWithError
+ *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented), or are equal.
+ */
 void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int targetQubit);
 
+
+
+/** Apply a general single-qubit unitary (including a global phase factor).
+ * The passed 2x2 ComplexMatrix must be unitary, otherwise an error is thrown.
+ *
+ * Note that the target qubit should be supplied as a global qubit index
+ * over all physical qubits in all tensors.
+ *
+    \f[
+    \setlength{\fboxrule}{0.01pt}
+    \fbox{
+                \begin{tikzpicture}[scale=.5]
+                \node[draw=none] at (-3.5, 0) {target};
+                \draw (-2,0) -- (-1, 0);
+                \draw (1, 0) -- (2, 0);
+                \draw (-1,-1)--(-1,1)--(1,1)--(1,-1)--cycle;
+                \node[draw=none] at (0, 0) {U};
+                \end{tikzpicture}
+    }
+    \f]
+ *
+ * @param[in,out] qureg object representing the set of all qubits
+ * @param[in] targetQubit qubit to operate on
+ * @param[in] u unitary matrix to apply
+ * @throws exitWithError
+ *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
+ *      or matrix \p u is not unitary.
+ */
 void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u);
 
-void initVirtualTarget(Tensor tensor, int vqIndex);
-
-void initVirtualControl(Tensor tensor, int vqIndex);
-
-
-// ----- VQ GRAPH UTILITY --------------------------------------------------------------
-
-void removeAllVqVertices(TensorNetwork tn, int tensorIndex);
-
-void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensorIndex, 
-        VqVertex *startingVqVertex, VqVertex *prevVqVertexToKeep,
-        int *uncontractedVqs, int numUncontractedVqs, VqVertex **tail, int *foundHead);
-
-
-// ----- INDEXING UTILITY --------------------------------------------------------------
-
-QCoord getLocalPq(TensorNetwork tn, int globalPq);
-
-void remapTensorIndexFromGlobalPq(TensorNetwork tn);
-
-void remapFirstGlobalPqIndex(TensorNetwork tn);
-
-int getVqVertexIndex(TensorNetwork tn, VqVertex *vqVertex);
 
 // ----- reporting ------------------------------------------------------------
 
 
+/** Print all tensors in a tensor network and their entanglement with other tensors
+ *
+ * @param[in] TensorNetwork tn the tensor network to print
+ */
 void printTensorNetwork(TensorNetwork tn);
 
 
 
-#endif // TN_H
+#endif // QUEST_TN
 
