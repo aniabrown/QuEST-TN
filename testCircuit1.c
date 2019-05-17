@@ -21,18 +21,13 @@ int main (int narg, char *varg[]) {
      */
 
     Qureg qubits = createQureg(2, env);
-    //initStateDebug(qubits);
     initZeroState(qubits);
-    hadamard(qubits, 0);
+    pauliX(qubits, 0);
     rotateZ(qubits, 0, 0.3); 
-    hadamard(qubits, 1);
-    //rotateZ(qubits, 1, 0.3); 
-    //initStateDebug(qubits);
-    //rotateZ(qubits, 1, 0.6); 
+
     qreal totalProb=calcTotalProb(qubits);
     printf("totalProb: %f\n", totalProb);
-//    pauliX(qubits, 0);
-    //hadamard(qubits, 2);
+
     reportStateToScreen(qubits, env, 0);
 
     /*
@@ -47,7 +42,6 @@ int main (int narg, char *varg[]) {
      */
 
     controlledNot(qubits, 0, 1);
-    //controlledNot(qubits, 0, 2);
     reportStateToScreen(qubits, env, 0);
 
 
@@ -71,7 +65,6 @@ int main (int narg, char *varg[]) {
     printf("\n\n--- Contract tensors:\n");
     contractTensors(tn, 0, 1, env);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-    //reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
 
 

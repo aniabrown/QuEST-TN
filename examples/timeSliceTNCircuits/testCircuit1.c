@@ -20,11 +20,14 @@ int main (int narg, char *varg[]) {
      * PREPARE QUBIT SYSTEM
      */
 
-    Qureg qubits = createQureg(4, env);
-    //initStateDebug(qubits);
+    Qureg qubits = createQureg(2, env);
     initZeroState(qubits);
-    hadamard(qubits, 1);
-    //hadamard(qubits, 2);
+    pauliX(qubits, 0);
+    rotateZ(qubits, 0, 0.3); 
+
+    qreal totalProb=calcTotalProb(qubits);
+    printf("totalProb: %f\n", totalProb);
+
     reportStateToScreen(qubits, env, 0);
 
     /*
@@ -38,31 +41,30 @@ int main (int narg, char *varg[]) {
      * APPLY CIRCUIT
      */
 
-    controlledNot(qubits, 1, 2);
+    controlledNot(qubits, 0, 1);
     reportStateToScreen(qubits, env, 0);
 
 
     /*
      * TENSOR NETWORK
      */
-    int numPqPerTensor[2] = {2, 2};
+    int numPqPerTensor[2] = {1, 1};
     int numVqPerTensor[2] = {1, 1};
-    printf("\n\nCreate Tensor Network:\n");
+    printf("\n\n--- Create Tensor Network:\n");
     TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
-    printf("\n\nApply controlled not:\n");
-    tn_controlledNot(tn, 1, 2);
+    printf("\n\n--- Apply controlled not:\n");
+    tn_controlledNot(tn, 0, 1);
     printTensorNetwork(tn);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
-    printf("\n\nContract tensors:\n");
+    printf("\n\n--- Contract tensors:\n");
     contractTensors(tn, 0, 1, env);
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-    reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
 
 
