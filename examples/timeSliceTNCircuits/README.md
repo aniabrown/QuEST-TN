@@ -113,7 +113,7 @@ There are several simple test circuits located in examples/timeSliceTNCircuits. 
 ```bash
 mkdir build
 cd build
-cmake -DUSER_SOURCE=[circuitName]
+cmake -DUSER_SOURCE="testCircuitN.c"
 make 
 ./demo
 ```
