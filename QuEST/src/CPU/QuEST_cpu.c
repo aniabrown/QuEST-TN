@@ -1470,6 +1470,55 @@ void statevec_initStateOfSingleQubit(Qureg *qureg, int qubitId, int outcome)
  * each component of each probability amplitude a unique floating point value. For debugging processes
  * @param[in,out] qureg object representing the set of qubits to be initialised
  */
+void statevec_initStateDebugFromOffset (Qureg qureg, int tensorIndexOffset)
+{
+    long long int chunkSize;
+    long long int index;
+    long long int indexOffset;
+
+    // dimension of the state vector
+    chunkSize = qureg.numAmpsPerChunk;
+
+    // Can't use qureg->stateVec as a private OMP var
+    qreal *stateVecReal = qureg.stateVec.real;
+    qreal *stateVecImag = qureg.stateVec.imag;
+
+    indexOffset = chunkSize * qureg.chunkId;
+
+
+
+    // TODO ---- REMOVE, for debugging only
+    qreal norm=0;
+    for (index=0; index<chunkSize; index++) {
+        norm += (((indexOffset + index)*2.0)/10.0)*(((indexOffset + index)*2.0)/10.0);
+        norm += (((indexOffset + index)*2.0+1.0)/10.0)*(((indexOffset + index)*2.0+1.0)/10.0);
+    }
+    norm=sqrt(norm);
+
+
+
+    chunkSize = chunkSize/2;
+    indexOffset += tensorIndexOffset;
+
+
+    // initialise the state to |0000..0000>
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (chunkSize, stateVecReal, stateVecImag, indexOffset, norm) \
+    private  (index) 
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (index=0; index<chunkSize; index++) {
+            stateVecReal[index] = (((indexOffset + index)*2.0)/10.0) / norm;
+            stateVecImag[index] = (((indexOffset + index)*2.0+1.0)/10.0) / norm;
+        }
+    }
+}
+
 void statevec_initStateDebug (Qureg qureg)
 {
     long long int chunkSize;
@@ -1485,11 +1534,25 @@ void statevec_initStateDebug (Qureg qureg)
 
     indexOffset = chunkSize * qureg.chunkId;
 
+
+
+    // TODO ---- REMOVE, for debugging only
+    qreal norm=0;
+    for (index=0; index<chunkSize; index++) {
+        norm += (((indexOffset + index)*2.0)/10.0)*(((indexOffset + index)*2.0)/10.0);
+        norm += (((indexOffset + index)*2.0+1.0)/10.0)*(((indexOffset + index)*2.0+1.0)/10.0);
+    }
+    norm=sqrt(norm);
+
+
+
+
+
     // initialise the state to |0000..0000>
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
-    shared   (chunkSize, stateVecReal, stateVecImag, indexOffset) \
+    shared   (chunkSize, stateVecReal, stateVecImag, indexOffset, norm) \
     private  (index) 
 # endif
     {
@@ -1497,11 +1560,12 @@ void statevec_initStateDebug (Qureg qureg)
 # pragma omp for schedule (static)
 # endif
         for (index=0; index<chunkSize; index++) {
-            stateVecReal[index] = ((indexOffset + index)*2.0)/10.0;
-            stateVecImag[index] = ((indexOffset + index)*2.0+1.0)/10.0;
+            stateVecReal[index] = (((indexOffset + index)*2.0)/10.0) / norm;
+            stateVecImag[index] = (((indexOffset + index)*2.0+1.0)/10.0) / norm;
         }
     }
 }
+
 
 // returns 1 if successful, else 0
 int statevec_initStateFromSingleFile(Qureg *qureg, char filename[200], QuESTEnv env){
