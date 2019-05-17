@@ -5,7 +5,7 @@ QuEST-TN Tutorial
 - [Coding](#coding)
 - [Compiling](#compiling)
 - [Running](#running)
-- [Test circuits](#Test circuits)
+- [Test circuits](#Test-circuits)
 
 
 # Coding
@@ -113,7 +113,7 @@ There are several simple test circuits located in examples/timeSliceTNCircuits. 
 ```bash
 mkdir build
 cd build
-cmake -D USER_SOURCE=[circuitName]
+cmake -DUSER_SOURCE=[circuitName]
 make 
 ./demo
 ```
