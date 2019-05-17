@@ -3,7 +3,9 @@
 
 #include "QuEST.h"
 
-/**
+/** @file
+ * The public interface to QuEST-TN
+
     Naming conventions:
 
     vq = virtual qubit
@@ -25,7 +27,6 @@
     tensor1UncontractedVqs and tensor2UncontractedVqs.
 
 **/
-
 
 typedef struct QCoord {
     int tensorIndex;
