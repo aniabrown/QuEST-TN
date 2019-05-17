@@ -18,8 +18,8 @@
  * The simplest strategy -- contract tensor 0 with every other tensor in turn
  * Output will be stored as tensor 0.
  *
- * @param[in,out] TensorNetwork tn tensor network to contract
- * @param[in] QuESTEnv env QuEST environment object
+ * @param[in,out] tn tensor network to contract
+ * @param[in] env QuEST environment object
  */
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
     for (int i=1; i<tn.numTensors; i++){
@@ -33,10 +33,10 @@ void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
  * between the two tensors.
  *
  * @returns the number of indices to contract
- * @param[in] TensorNetwork tn the tensor network that the two tensors belong to
- * @param[in] int tensor1Index the first tensor to contract. This should have the
+ * @param[in] tn the tensor network that the two tensors belong to
+ * @param[in] tensor1Index the first tensor to contract. This should have the
  *      lower index of the two tensors.
- * @param[in] int tensor2Index the second tensor to contract
+ * @param[in] tensor2Index the second tensor to contract
  */
 int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index){
     int numContractions = 0;
@@ -55,20 +55,20 @@ int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index){
  * The number of virtual qubits to contract must be the same for each tensor but the number
  * of uncontracted qubits may differ
  *
- * @param[in] TensorNetwork tn the tensor network that the two tensors belong to
- * @param[in] int tensor1Index the first tensor to contract. This should have the
+ * @param[in] tn the tensor network that the two tensors belong to
+ * @param[in] tensor1Index the first tensor to contract. This should have the
  *      lower index of the two tensors.
- * @param[in] int tensor2Index the second tensor to contract
- * @param[in] int numContractions the number of indices to contract over
- * @param[out] int** tensor1Contractions tensor1 virtual qubits to contract
- * @param[out] int** tensor2Contractions tensor2 virtual qubits to contract
- * @param[out] int* numTensor1UncontractedVqs number of virtual qubits in tensor1 that represent
+ * @param[in] tensor2Index the second tensor to contract
+ * @param[in] numContractions the number of indices to contract over
+ * @param[out] tensor1Contractions tensor1 virtual qubits to contract
+ * @param[out] tensor2Contractions tensor2 virtual qubits to contract
+ * @param[out] numTensor1UncontractedVqs number of virtual qubits in tensor1 that represent
  *      entanglement with tensors other than tensor2
- * @param[out] int* numTensor2UncontractedVqs number of virtual qubits in tensor2 that represent
+ * @param[out] numTensor2UncontractedVqs number of virtual qubits in tensor2 that represent
  *      entanglement with tensors other than tensor1
- * @param[out] int** tensor1UncontractedVqs virtual qubit indices that will remain uncontracted
+ * @param[out] tensor1UncontractedVqs virtual qubit indices that will remain uncontracted
  *      in tensor1
- * @param[out] int** tensor1UncontractedVqs virtual qubit indices that will remain uncontracted
+ * @param[out] tensor1UncontractedVqs virtual qubit indices that will remain uncontracted
  *      in tensor2
  */
 void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Index, int numContractions,

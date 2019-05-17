@@ -28,31 +28,52 @@
 
 **/
 
+
 typedef struct QCoord {
+    // The tensor that this qubit is located in
     int tensorIndex;
+    // The local index of this qubit
     int qIndex;
 } QCoord;
 
 typedef struct VqVertex{
+    // The vertex corresponding to the next virtual qubit in the tensor
     struct VqVertex *nextInTensor;
+    // The vertex corresponding to the virtual qubit paired with this one in another tensor
     struct VqVertex *entangledPair;
+    // The index of the tensor object that this virtual qubit is in
     int tensorIndex;
 } VqVertex;
 
 typedef struct Tensor {
+    // QuEST qureg object containing the physical and virtual qubits in this tensor, including
+    // currently unused virtual qubits up to the maximum number of virtual qubits in the tensor
     Qureg qureg;
+    // Number of physical qubits in the tensor
     int numPq;
+    // Maximum number of virtual qubits that can be used in the tensor
     int numVq;
+    // The index of the first physical qubit in the tensor in the global system
     int firstGlobalPqIndex;
+    // The next unused virtual qubit index
     int nextVqIndex;
 } Tensor;
 
 typedef struct TensorNetwork {
+    // The number of tensors in the tensor network
     int numTensors;
+    // An array of all tensor objects in the network
     Tensor *tensors;
+    // For each qubit in the global system, the tensor which contains the qubit referenced by that
+    // global qubit ID. Structured in this way for quick lookup during gate operations
     int *tensorIndexFromGlobalPq;
+    // For each tensor, the first element in the linked list of virtual qubits in use in that tensor
     VqVertex **tensorHeadVqVertex;
+    // For each tensor, the last element in the linked list of virtual qubits in use in that tensor.
+    // Stored to be able to append to the list quickly.
     VqVertex **tensorTailVqVertex;
+    // For each tensor, the number of virtual qubits currently in use representing entanglements
+    // between that tensor and others
     int *numEntanglements;
 } TensorNetwork;
 
@@ -64,12 +85,12 @@ typedef struct TensorNetwork {
  * of physical qubits and maximum number of virtual qubits in each tensor. Initialise all
  * physical qubits to the zero state and virtual qubits to an undefined state.
  *
- * @param[in] int numTensors the number of tensors in the tensor network
- * @param[in] int* numPqPerTensor an array of values corresponding to the number of physical
+ * @param[in] numTensors the number of tensors in the tensor network
+ * @param[in] numPqPerTensor an array of values corresponding to the number of physical
  *      qubits in each tensor
- * @param[in] int* numVqPerTensor an array of values corresponding to the maximum number of
+ * @param[in] numVqPerTensor an array of values corresponding to the maximum number of
  *      virtual qubits that could be used in each tensor
- * @param[in] QuESTEnv env QuEST environment object
+ * @param[in] env QuEST environment object
  *
  */
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor,
@@ -88,8 +109,8 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
  * The simplest strategy -- contract tensor 0 with every other tensor in turn
  * Output will be stored as tensor 0.
  *
- * @param[in,out] TensorNetwork tn tensor network to contract
- * @param[in] QuESTEnv env QuEST environment object
+ * @param[in,out] tn tensor network to contract
+ * @param[in] env QuEST environment object
  */
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env);
 
@@ -104,10 +125,10 @@ void contractTensorNetwork(TensorNetwork tn, QuESTEnv env);
     tensor1 physical qubits, tensor2 physical qubits, tensor1 virtual qubits, 
     tensor2 virtual qubits.
 
-    @param[in, out] TensorNetwork tn the tensor network the two tensors belong to
-    @param[in] int tensor1 the index of the first tensor to contract
-    @param[in] int tensor1 the index of the second tensor to contract
-    @param[in] QuESTEnv env the QuEST environment object 
+    @param[in, out] tn the tensor network the two tensors belong to
+    @param[in] tensor1 the index of the first tensor to contract
+    @param[in] tensor1 the index of the second tensor to contract
+    @param[in] env the QuEST environment object 
 */ 
 void contractTensors(TensorNetwork tn, int tensor1, int tensor2, QuESTEnv env);
 
@@ -197,7 +218,7 @@ void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u);
 
 /** Print all tensors in a tensor network and their entanglement with other tensors
  *
- * @param[in] TensorNetwork tn the tensor network to print
+ * @param[in] tn the tensor network to print
  */
 void printTensorNetwork(TensorNetwork tn);
 
