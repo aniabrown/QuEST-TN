@@ -42,27 +42,21 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><h2>Introduction</h2>
-<p>The <b>Quantum Exact Simulation Toolkit</b> is a high performance simulator of universal quantum circuits, state-vectors and density matrices. QuEST is written in C, hybridises OpenMP and MPI, and can run on a GPU. Needing only compilation, QuEST is easy to run both on laptops and supercomputers (in both C and C++), where it can take advantage of multicore, GPU-accelerated and networked machines to quickly simulate circuits on many qubits.</p>
-<p>QuEST has a simple interface, independent of its run environment (on CPUs, GPUs or over networks), </p><div class="fragment"><div class="line">hadamard(qubits, 0);</div><div class="line"></div><div class="line">controlledNot(qubits, 0, 1);</div><div class="line"></div><div class="line">rotateY(qubits, 0, .1);</div></div><!-- fragment --><p> though is flexible </p><div class="fragment"><div class="line">Vector v;</div><div class="line">v.x = 1; v.y = .5; v.z = 0;</div><div class="line">rotateAroundAxis(qubits, 0, 3.14/2, v);</div></div><!-- fragment --><p> and powerful </p><div class="fragment"><div class="line"><span class="comment">// sqrt(X) with pi/4 global phase</span></div><div class="line">ComplexMatrix2 u;</div><div class="line">u.r0c0 = (Complex) {.real=.5, .imag= .5};</div><div class="line">u.r0c1 = (Complex) {.real=.5, .imag=-.5}; </div><div class="line">u.r1c0 = (Complex) {.real=.5, .imag=-.5};</div><div class="line">u.r1c1 = (Complex) {.real=.5, .imag= .5};</div><div class="line">unitary(qubits, 0, u);</div><div class="line"></div><div class="line"><span class="keywordtype">int</span>[] controls = {1, 2, 3, 4, 5};</div><div class="line">multiControlledUnitary(qureg, controls, 5, 0, u);</div></div><!-- fragment --><p>QuEST can simulate decoherence on mixed states, output <a href="https://arxiv.org/abs/1707.03429">QASM</a>, perform measurements, apply gates with any number of control qubits, and provides cheap/fast access to the underlying statevector. QuEST offers precision-agnostic real and imaginary (additionally include <code>QuEST_complex.h</code>) number types, the precision of which can be modified at compile-time, as can the target hardware.</p>
-<p>Learn more about QuEST at <a href="https://quest.qtechtheory.org">quest.qtechtheory.org</a>.</p>
-<h2>Getting started</h2>
-<p>QuEST is contained entirely in the files in the <code>QuEST/</code> folder. To use QuEST, copy this folder to your computer and include <code>QuEST.h</code> in your <code>C</code> or <code>C++</code> code, and compile using the provided [makefile](makefile). See the /examples/README.md "tutorial" for an introduction, and view the full API <a href="https://quest-kit.github.io/QuEST/QuEST_8h.html">here</a>.</p>
-<p>We also include example <a href="examples/submissionScripts/">submission scripts</a> for using QuEST with SLURM and PBS.</p>
-<h3>Quick Start</h3>
-<p>Copy or clone this repository to your machine. E.g. in the desired directory, enter </p><div class="fragment"><div class="line">git clone https://github.com/quest-kit/QuEST.git</div><div class="line">cd QuEST</div></div><!-- fragment --><p> at terminal. You can then compile the <a href="examples/tutorial_example.c">example</a> using </p><div class="fragment"><div class="line">cp examples/tutorial_example.c .</div><div class="line">make</div></div><!-- fragment --><p> then run it with </p><div class="fragment"><div class="line">./demo</div></div><!-- fragment --><p> and afterward, clean up with ```bash make clean rm tutorial_example.c ```<code> The program will print information about your execution environment and some simple operations on a three qubit system. See the [tutorial](examples/README.md) for a better introduction. Additionally, run</code>cd tests<code>then</code>./runTests.sh<code>to test QuEST runs correctly in your environment, as specified in</code>makefile`.</p>
+<p>This is a prototype version of a tensor network extension to the <a href="https://github.com/QuEST-Kit/QuEST">Quantum Exact Simulation Toolkit</a>, a high performance simulator of universal quantum circuits, state-vectors and density matrices.</p>
+<p>The goal of this extension is to reduce the memory cost of representing a many qubit system in cases where the system is not maximally entangled.</p>
+<p>WARNING: this code is currently in early development and the API could change without warning</p>
+<h2>Quick Start</h2>
+<p>Copy or clone this repository to your machine. E.g. in the desired directory, enter </p><div class="fragment"><div class="line">git clone https://github.com/aniabrown/QuEST-TN.git</div><div class="line">cd QuEST-TN</div></div><!-- fragment --><p> at terminal. You can then compile the <a href="examples/timeSliceTNCircuits/testCircuit1.c">simplest test circuit</a> using </p><div class="fragment"><div class="line">mkdir build</div><div class="line">cd build</div><div class="line">cmake ..</div><div class="line">make</div></div><!-- fragment --><p> then run it with </p><div class="fragment"><div class="line">./demo</div></div><!-- fragment --><p> and afterward, clean up with ```bash make clean ````</p>
+<p>or, to remove the build directory entirely, from the root directory </p><div class="fragment"><div class="line">rm -r build</div></div><!-- fragment --><p>The program will print information about your execution environment. It will then apply the same operations, first on a 2 qubit QuEST Qureg object and then on two tensors each containing one qubit.</p>
+<p>See the tutorial for a better introduction.</p>
 <h2>Documentation</h2>
-<p>View the API <a href="https://quest-kit.github.io/QuEST/QuEST_8h.html">here</a>, and check compatible compiler versions here.</p>
-<blockquote class="doxtable">
-<p>For developers: To recreate the full documentation after making changes to the code, run doxygen doxyconf in the root directory. This will generate documentation in Doxygen_doc/html, and can be accessed through index.html in that folder. </p>
-</blockquote>
-<h2>Acknowledgements</h2>
-<p>QuEST uses the <a href="http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html">mt19937ar</a> Mersenne Twister algorithm for random number generation, under the BSD licence. QuEST optionally (by additionally importing <code>QuEST_complex.h</code>) integrates the <a href="http://collaboration.cmc.ec.gc.ca/science/rpn/biblio/ddj/Website/articles/CUJ/2003/0303/cuj0303meyers/index.htm">language agnostic complex type</a> by Randy Meyers and Dr. Thomas Plum</p>
+<p>View the API <a href="https://aniabrown.github.io/QuEST-TN/QuEST__tn_8h.html">here</a></p>
 <h2>Licence</h2>
-<p>QuEST is released under a <a href="https://github.com/quest-kit/QuEST/blob/master/LICENCE.txt">MIT Licence</a> </p>
+<p>QuEST-TN is released under a <a href="https://github.com/aniabrown/QuEST-TN/blob/master/LICENCE.txt">MIT Licence</a> </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2019 13:54:13 for Quantum Exact Simulation Toolkit by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2019 15:05:20 for Quantum Exact Simulation Toolkit by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

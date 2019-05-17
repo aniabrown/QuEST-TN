@@ -60,7 +60,7 @@ Data Fields</h2></td></tr>
 <div class="textblock"><p>Naming conventions: </p>
 <p>vq = virtual qubit pq = physical qubit These are not capitalised by default to distinguish ordinary vars from structs such as <a class="el" href="structVqVertex.html">VqVertex</a>, which do have the first letter capitalised.</p>
 <p>Unless marked as global in the name, all var names that refer to qubit indices refer to local index within a tensor and qubit type. i.e. physical qubits in tensor 2 start from index 0, and virtual qubits in tensor 2 also start from index 0.</p>
-<p>In a contraction, the two tensors are referred to as tensor1 and tensor2, where tensor1 is the tensor with the lower index in <a class="el" href="structTensorNetwork.html#a2223862ebf42fec13ef26249990f2ca6">TensorNetwork.tensors</a></p>
+<p>In a contraction, the two tensors are referred to as tensor1 and tensor2, where tensor1 is the tensor with the lower index in <a class="el" href="structTensorNetwork.html#adadf11d65145190441a41af1676e2c9b">TensorNetwork.tensors</a></p>
 <p>In a contraction, all shared (virtual qubit) indices between tensor1 and tensor2 will be contracted. The lists of virtual qubit indices corresponding to these contractions are referred to as tensor1Contractions and tensor2Contractions. The lists of any other virtual qubits which are not being contracted as they represent entanglements with other tensors, are referred to as tensor1UncontractedVqs and tensor2UncontractedVqs. </p>
 
 <p class="definition">Definition at line <a class="el" href="QuEST__tn_8h_source.html#l00030">30</a> of file <a class="el" href="QuEST__tn_8h_source.html">QuEST_tn.h</a>.</p>
@@ -79,7 +79,7 @@ Data Fields</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="QuEST__tn_8h_source.html#l00032">32</a> of file <a class="el" href="QuEST__tn_8h_source.html">QuEST_tn.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="QuEST__tn_8c_source.html#l00649">getLocalPq()</a>, and <a class="el" href="QuEST__tn_8c_source.html#l00541">tn_controlledNot()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="QuEST__tn_8c_source.html#l00657">getLocalPq()</a>, and <a class="el" href="QuEST__tn_8c_source.html#l00549">tn_controlledNot()</a>.</p>
 
 </div>
 </div>
@@ -97,18 +97,17 @@ Data Fields</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="QuEST__tn_8h_source.html#l00031">31</a> of file <a class="el" href="QuEST__tn_8h_source.html">QuEST_tn.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="QuEST__tn_8c_source.html#l00649">getLocalPq()</a>, and <a class="el" href="QuEST__tn_8c_source.html#l00541">tn_controlledNot()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="QuEST__tn_8c_source.html#l00657">getLocalPq()</a>, and <a class="el" href="QuEST__tn_8c_source.html#l00549">tn_controlledNot()</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following files:<ul>
+<hr/>The documentation for this struct was generated from the following file:<ul>
 <li><a class="el" href="QuEST__tn_8h_source.html">QuEST_tn.h</a></li>
-<li><a class="el" href="tn_8h_source.html">tn.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2019 13:54:13 for Quantum Exact Simulation Toolkit by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2019 15:05:20 for Quantum Exact Simulation Toolkit by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
