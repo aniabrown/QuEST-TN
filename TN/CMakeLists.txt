@@ -1,5 +1,5 @@
 set(TN_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/tn.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/QuEST_tn.c
     PARENT_SCOPE
 )
 

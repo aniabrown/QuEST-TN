@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "QuEST.h"
 #include "QuEST_debug.h"
-#include "tn.h"
+#include "QuEST_tn.h"
 
 int main (int narg, char *varg[]) {
 

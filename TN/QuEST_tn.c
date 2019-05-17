@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <QuEST.h>
 #include "QuEST_debug.h"
+#include "QuEST_tn_internal.h"
+#include "QuEST_tn.h"
 
 #define DEBUG 0
 
@@ -11,7 +13,6 @@
 # define DEBUG_PRINT(x) do {} while (0)
 #endif
 
-#include "tn.h"
 
 /** Contract all tensors in a tensor network one by one. 
  * The simplest strategy -- contract tensor 0 with every other tensor in turn
@@ -288,6 +289,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
             &tensor1Contractions, &tensor2Contractions,
             &numTensor1UncontractedVqs, &numTensor2UncontractedVqs,
             &tensor1UncontractedVqs, &tensor2UncontractedVqs);
+
     DEBUG_PRINT(("tensor1Contractions: "));
     for (int p=0; p<numContractions; p++) {DEBUG_PRINT(("%d ", tensor1Contractions[p])); }
     DEBUG_PRINT(("\ntensor2Contractions: "));
