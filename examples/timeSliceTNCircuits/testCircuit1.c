@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "QuEST.h"
 #include "QuEST_debug.h"
-#include "tn.h"
+#include "QuEST_tn.h"
 
 int main (int narg, char *varg[]) {
 
@@ -12,35 +12,34 @@ int main (int narg, char *varg[]) {
 
     QuESTEnv env = createQuESTEnv();
 
-    printf("-------------------------------------------------------\n");
-    printf("Running QuEST tutorial:\n\t Basic circuit involving a system of 3 qubits.\n");
-    printf("-------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------\n");
+    printf("Running QuEST test circuit 1:\n\t Basic circuit involving a system of 2 qubits in plain\n\t QuEST Qureg and tensor network representation.\n");
+    printf("-----------------------------------------------------------------\n");
 
     /*
-     * PREPARE QUBIT SYSTEM
+     * REPORT ENVIRONMENT
      */
 
-    Qureg qubits = createQureg(2, env);
-    initZeroState(qubits);
-    pauliX(qubits, 0);
-    rotateZ(qubits, 0, 0.3); 
-
-    qreal totalProb=calcTotalProb(qubits);
-    printf("totalProb: %f\n", totalProb);
-
-    reportStateToScreen(qubits, env, 0);
-
-    /*
-     * REPORT SYSTEM AND ENVIRONMENT
-     */
     printf("\nThis is our environment:\n");
-    reportQuregParams(qubits);
     reportQuESTEnv(env);
 
     /*
-     * APPLY CIRCUIT
+     * PLAIN QUREG REPRESENTATION
      */
 
+    // Initialise 
+    Qureg qubits = createQureg(2, env);
+    printf("\nCreate a plain 2 qubit Qureg object:\n");
+    reportQuregParams(qubits);
+
+    // Apply single qubit gates
+    initZeroState(qubits);
+    pauliX(qubits, 0);
+    rotateZ(qubits, 0, 0.3); 
+    reportStateToScreen(qubits, env, 0);
+
+    // Apply entangling operation
+    printf("\nAppy controlledNot(0,1)\n");
     controlledNot(qubits, 0, 1);
     reportStateToScreen(qubits, env, 0);
 
@@ -48,24 +47,32 @@ int main (int narg, char *varg[]) {
     /*
      * TENSOR NETWORK
      */
+
+    // Initialize
     int numPqPerTensor[2] = {1, 1};
     int numVqPerTensor[2] = {1, 1};
-    printf("\n\n--- Create Tensor Network:\n");
+    printf("\n\nCreate Tensor Network representation:\n");
     TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
     printTensorNetwork(tn);
+    printf("Tensor 0\n");
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
+    printf("Tensor 1\n");
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
-    printf("\n\n--- Apply controlled not:\n");
+    // Apply entangling operation
+    printf("\n\nApply controlledNot(0,1):\n");
     tn_controlledNot(tn, 0, 1);
     printTensorNetwork(tn);
+    printf("Tensor 0\n");
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
+    printf("Tensor 1\n");
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
-    printf("\n\n--- Contract tensors:\n");
+    // Contract
+    printf("\n\nContract tensors:\n");
     contractTensors(tn, 0, 1, env);
+    printf("Tensor 0\n");
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-
 
 
     /*
