@@ -1,4 +1,4 @@
-QuEST-TN Tutorial
+QuEST Tutorial
 ======
 
 **Table of Contents**
@@ -9,36 +9,39 @@ QuEST-TN Tutorial
 
 # Coding
 
-To use the QuEST-TN extension in your C or C++ code, include
-
+QuEST can be used in your C or C++ code, simply by including
 ```C
 #include <QuEST.h>
-#include <QuEST_tn.h>
 ```
 
-The currently available API for operations on tensor networks is available [here](https://aniabrown.github.io/QuEST-TN/QuEST__tn_8h.html). For operations on plain QuEST Qureg objects, see the API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html) and the [QuEST tutorial](examples/README.md). 
+Independent of which platform you'll run your simulation on (multicore CPUS, a GPU, or over a network), your QuEST code will look the same, compile with the same [makefile](https://github.com/quest-kit/QuEST/blob/master/makefile), and use the same [API](https://quest-kit.github.io/QuEST/QuEST_8h.html).
 
-Here's a very simple circuit which applies a controlled not on a two qubit state split over two
-tensors and reports the resulting tensor network structure. 
- 
+Here's a simulation of a very simple circuit which measures  ![equation](https://latex.codecogs.com/gif.latex?C_0%28X_1%29%20H_0%20%7C00%5Crangle).
 ```C
 #include <QuEST.h>
 
 int main(int narg, char *varg[]) {
 
-  // load QuEST environment. Do this exactly once as the first step in your code.
+  // load QuEST
   QuESTEnv env = createQuESTEnv();
-
-   
   
+  // create 2 qubits in the hadamard state
+  Qureg qubits = createQureg(2, env);
+  initPlusState(qubits);
 	
-  // unload QuEST environment. Do this exactly one as the last step in your code. 
-  destroyQuESTEnv(env); 
+  // apply circuit
+  hadamard(qubits, 0);
+  controlledNot(qubits, 0, 1);
+  measure(qubits, 1);
+	
+  // unload QuEST
+  destroyQureg(qubits, env); 
+  destroyQuESTEnv(env);
   return 0;
 }
 ```
+Of course, this code doesn't output anything!
 
-## Test circuits
 
 ----------------------
 
