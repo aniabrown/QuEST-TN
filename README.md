@@ -38,7 +38,7 @@ rm -r build
 
 The program will print information about your execution environment. It will then apply the same operations, first on a 2 qubit QuEST Qureg object and then on two tensors each containing one qubit. 
 
-See the [tutorial](examples/timeSliceTNCircuits/README.md) for a better introduction. 
+See the [TN tutorial](examples/timeSliceTNCircuits/README.md) for a better introduction or the [QuEST tutorial](examples/README.md) for an introduction to using QuEST.
 
 ## Documentation
 
