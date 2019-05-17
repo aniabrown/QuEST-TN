@@ -23,139 +23,31 @@ tensors and reports the resulting tensor network structure.
  
 ```C
 #include <QuEST.h>
+#include <QuEST_tn.h>
 
 int main(int narg, char *varg[]) {
 
   // load QuEST environment. Do this exactly once as the first step in your code.
   QuESTEnv env = createQuESTEnv();
-
-   
   
+  int numPqPerTensor[2] = {1, 1};
+  int numVqPerTensor[2] = {1, 1};
+  
+  TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
+  printTensorNetwork(tn);
+  tn_controlledNot(tn, 0, 1);
+  printTensorNetwork(tn);
 	
   // unload QuEST environment. Do this exactly one as the last step in your code. 
   destroyQuESTEnv(env); 
   return 0;
 }
 ```
+---------------------------
 
 ## Test circuits
 
-----------------------
 
-Let's walk through a more sophisticated circuit.
-
-We first construct a quest environment, which abstracts away any preparation of multithreading, distribution or GPU-acceleration strategies.
-```C
-QuESTEnv env = createQuESTEnv();
-```
-
-We then create a quantum register, in this case of 3 qubits.
-```C
-Qureg qubits = createQureg(3, env);
-```
-and set it to be in the zero state.
-```C
-initZeroState(qubits);
-```
-We can create multiple `Qureg` instances, and QuEST will sort out allocating memory for the state-vectors, even over networks! Note we can replace `createQureg` with `createDensityQureg`, a more powerful density matrix representation which can store mixed states!
-
-We're now ready to apply some gates to our qubits, which in this case have indices 0, 1 and 2.
-When applying a gate, we pass along which quantum register to operate upon.
-```C
-hadamard(qubits, 0);
-controlledNot(qubits, 0, 1);
-rotateY(qubits, 2, .1);
-```
-
-Some gates allow us to specify a general number of control qubits
-```C
-multiControlledPhaseGate(qubits, (int []){0, 1, 2}, 3);
-```
-
-We can specify general single-qubit unitary operations as 2x2 matrices
-```C
-// sqrt(X) with a pi/4 global phase
-ComplexMatrix2 u;
-u.r0c0 = (Complex) {.real=.5, .imag= .5};
-u.r0c1 = (Complex) {.real=.5, .imag=-.5}; 
-u.r1c0 = (Complex) {.real=.5, .imag=-.5};
-u.r1c1 = (Complex) {.real=.5, .imag= .5};
-unitary(qubits, 0, u);
-```
-or more compactly, foregoing the global phase factor,
-```C
-Complex a, b;
-a.real = .5; a.imag =  .5;
-b.real = .5; b.imag = -.5;
-compactUnitary(qubits, 1, a, b);
-```
-or even more compactly, as a rotation around an arbitrary axis on the Bloch-sphere
-```C
-Vector v;
-v.x = 1; v.y = 0; v.z = 0;
-rotateAroundAxis(qubits, 2, 3.14/2, v);
-```
-
-We can controlled-apply general unitaries
-```C
-controlledCompactUnitary(qubits, 0, 1, a, b);
-```
-even with multiple control qubits!
-```C
-multiControlledUnitary(qubits, (int []){0, 1}, 2, 2, u);
-```
-
-What has this done to the probability of the basis state |111> = |7>?
-```C
-qreal prob = getProbAmp(qubits, 7);
-printf("Probability amplitude of |111>: %lf\n", prob);
-```
-Here, `qreal` is a floating point number (e.g. `double`). The state-vector is stored as `qreal`s so that we can change its precision without any recoding, by changing `PRECISION` in the [makefile](../makefile)
-
-How probable is measuring our final qubit (2) in outcome `1`?
-```C
-prob = calcProbOfOutcome(qubits, 2, 1);
-printf("Probability of qubit 2 being in state 1: %f\n", prob);
-```
-
-Let's measure the first qubit, randomly collapsing it to 0 or 1
-```C
-int outcome = measure(qubits, 0);
-printf("Qubit 0 was measured in state %d\n", outcome);
-```
-and now measure our final qubit, while also learning of the probability of its outcome.
-```
-outcome = measureWithStats(qubits, 2, &prob);
-printf("Qubit 2 collapsed to %d with probability %f\n", outcome, prob);
-```
-
-At the conclusion of our circuit, we should free up the memory used by our state-vector.
-```C
-destroyQureg(qubits, env);
-destroyQuESTEnv(env);
-```
-
-The effect of the [code above](tutorial_example.c) is to simulate the below circuit
-
-<img src="https://qtechtheory.org/wp-content/uploads/2018/02/github_circuit.png" alt="A quantum circuit" width=400px >
-
-and after compiling (see section below), gives psuedo-random output
-
-> ```
-> Probability amplitude of |111>: 0.498751
-> Probability of qubit 2 being in state 1: 0.749178
-> Qubit 0 was measured in state 1
-> Qubit 2 collapsed to 1 with probability 0.998752
-> ```
-
-> ```
-> Probability amplitude of |111>: 0.498751
-> Probability of qubit 2 being in state 1: 0.749178
-> Qubit 0 was measured in state 0
-> Qubit 2 collapsed to 1 with probability 0.499604
-> ```
-
-QuEST uses the [Mersenne Twister](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html) algorithm to generate random numbers used for randomly collapsing the state-vector. The user can seed this RNG using `seedQuEST(arrayOfSeeds, arrayLength)`, otherwise QuEST will by default (through `seedQuESTDefault()`) create a seed from the current time and the process id.
 
 ----------------------------
 
@@ -217,33 +109,6 @@ For manual configuration (not recommended) you can change the `CMakeLists.txt` i
 
 ----------------------------
 
-# Running unit tests
-
-To confirm that QuEST has been compiled and is running correctly on your platform, unit tests can be run from the build folder with the command
-
-```bash
-make test
-```
-
-This will report whether the QuEST library has been built correctly and whether all unit tests have passed successfully. In case of failures, see utilities/QuESTLog.log for a detailed report. 
-
-Tests will automatically run in distributed mode on four processes if -DDISTRIBUTED=1 is set at compile time, and on GPU if -DGPUACCELERATED=1 is set at compile time. In order to set the number of process on which the tests should be run, set:
-```bash
-cmake -DMPIEXEC_MAX_NUMPROCS=4 ..
-```
-
-Note, the most common reason for unit tests failing on a new platform is running on a GPU with the incorrect GPU_COMPUTE_CAPABILITY. Remember to specify this at compile time for [your device](https://developer.nvidia.com/cuda-gpus). Eg, for a P100, use
-
-
-```bash
-mkdir build
-cd build
-cmake -DGPUACCELERATED=1 -DGPU_COMPUTE_CAPABILIty=60 ..
-make test
-```
-
-----------------------------
-
 # Running
 
 ## locally
@@ -258,79 +123,3 @@ export OMP_NUM_THREADS=8
 ./myExecutable
 ```
 QuEST will automatically allocate work between the given number of threads to speedup your simulation.
-
-If you compiled in distributed mode, your code can be run over a network (here, over 8 machines) using
-```bash
-mpirun -np 8 ./myExecutable
-```
-This will, if enabled, also utilise multithreading on each node with as many threads set in `OMP_NUM_THREADS`.
-
-If you compiled for a GPU connected to your system, simply run
-```bash
-./myExecutable
-```
-as normal!
-
-## through a job submission system
-
-There are no special requirements for running QuEST through job submission systems. Just call `./myExecutable` as you would any other binary.
-
-For example, the [above code](tutorial_example.c) can be split over 4 MPI nodes (each with 8 cores) on a SLURM system using the following SLURM submission script
-```bash
-#SBATCH --nodes=4
-#SBATCH --ntasks-per-node=1
-
-module purge
-module load mvapich2
-
-mkdir build
-cd build
-cmake -DDISTRIBUTED=1 ..
-make
-
-export OMP_NUM_THREADS=8
-mpirun ./myExecutable
-```
-or a PBS submission script like
-```bash
-#PBS -l select=4:ncpus=8
-
-module purge
-module load mvapich2
-
-mkdir build
-cd build
-cmake -DDISTRIBUTED=1 ..
-make
-
-export OMP_NUM_THREADS=8
-aprun -n 4 -d 8 -cc numa_node ./myExecutable
-```
-
-Running QuEST on a GPU partition is similarly easy in SLURM
-```bash
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1 
-
-#SBATCH --partition=gpu    ## name may vary
-
-module purge
-module load cuda  ## name may vary
-
-mkdir build
-cd build
-cmake -DGPUACCELERATED=1 -DGPU_COMPUTE_CAPABILITY=[Compute capability] ..
-make
-
-./myExecutable
-```
-
-On each platform, there is no change to our source code or our QuEST interface. We simply recompile, and QuEST will utilise the available hardware (a GPU, shared-memory or distributed CPUs) to speedup our code.
-
-Note that parallelising with MPI (`-DDISTRIBUTED=1`) will mean all code in your source file will be repeated on every node. To execute some code (e.g. printing) only on one node, do
-```C
-if (env.rank == 0)
-    printf("Only one node executes this print!");
-```
-Such conditions are valid and always satisfied in code run on a single node.
