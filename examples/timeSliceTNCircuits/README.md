@@ -5,6 +5,7 @@ QuEST-TN Tutorial
 - [Coding](#coding)
 - [Compiling](#compiling)
 - [Running](#running)
+- [Test circuits](#Test circuits)
 
 
 # Coding
@@ -43,12 +44,6 @@ int main(int narg, char *varg[]) {
   return 0;
 }
 ```
----------------------------
-
-## Test circuits
-
-
-
 ----------------------------
 
 # Compiling
@@ -72,27 +67,12 @@ cmake -DOUTPUT_EXE="myExecutable" ..
 
 When using the cmake command as above, the -D[VAR=VALUE] option can be passed other options to further configure your build.
 
-To compile your code to run on multi-CPU systems use
-```bash
-cmake -DDISTRIBUTED=1 ..
-```
-
-To compile for GPU, use
-```bash
-cmake -DGPUACCELERATED=1 -DGPU_COMPUTE_CAPABILITY=[COMPUTE_CAPABILITY] ..
-```
-
-Where COMPUTE_CAPABILITY is the compute cabability of your GPU, written without a decimal point. This can can be looked up at the [NVIDIA website](https://developer.nvidia.com/cuda-gpus). The default value is 30.
-
-By default, QuEST will compile with OpenMP parallelism enabled if an OpenMP compatible compiler and OpenMP library can be found on your system (e.g. [GCC 4.9](https://gcc.gnu.org/gcc-4.9/changes.html)). Using distribution requires an MPI implementation is installed on your system, and GPU acceleration requires a CUDA compiler (`nvcc`). We've made a comprehensive list of compatible compilers which you can view [here](../tests/compilers/compatibility.md). This does not change your `COMPILER` setting - the makefile will choose the appropriate MPI and CUDA wrappers automatically.
-
-You can additionally customise the precision with which the state-vector is stored.
+You customise the precision with which the state-vector is stored.
 ```bash
 cmake -DPRECISION=2 ..
 ```
 Using greater precision means more precise computation but at the expense of additional memory requirements and runtime.
 Checking results are unchanged when altaring the precision can be a great test that your calculations are sufficiently precise.
-
 
 Please note that cmake caches these changes (per directory) so for any subsequent builds you should just type `make` from the build directory and the previously defined settings will be applied. If any parameters require changing, these can be redefined by:
 ```
@@ -123,3 +103,18 @@ export OMP_NUM_THREADS=8
 ./myExecutable
 ```
 QuEST will automatically allocate work between the given number of threads to speedup your simulation.
+
+---------------------------
+
+# Test circuits
+
+There are several simple test circuits located in examples/timeSliceTNCircuits. To use one of these circuits, copy the circuit file to the root directory and then use
+
+```bash
+mkdir build
+cd build
+cmake -D USER_SOURCE=[circuitName]
+make 
+./demo
+```
+
