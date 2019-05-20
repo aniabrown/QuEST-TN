@@ -309,8 +309,8 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     long long int stateVec1PhysicalSize, stateVec2PhysicalSize;
 
     contractedStateVecSize = 1LL << totalNumQ;
-    stateVec1Size = 1LL << tensor1.numPq + tensor1.numVq;
-    stateVec2Size = 1LL << tensor2.numPq + tensor1.numVq;
+    stateVec1Size = 1LL << (tensor1.numPq + tensor1.numVq);
+    stateVec2Size = 1LL << (tensor2.numPq + tensor1.numVq);
     stateVec1PhysicalSize = 1LL << tensor1.numPq;
     stateVec2PhysicalSize = 1LL << tensor2.numPq;
 
