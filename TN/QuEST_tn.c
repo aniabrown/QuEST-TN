@@ -546,6 +546,13 @@ void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensor
 // ----- operations ------------------------------------------------------------
 
 
+void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u){
+    QCoord targetPqLocal = getLocalPq(tn, targetQubit);
+    Tensor *targetTensor = &(tn.tensors[targetPqLocal.tensorIndex]);
+    unitary(targetTensor->qureg, targetPqLocal.qIndex, u);
+}
+
+
 void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int targetQubit){
     QCoord controlPqLocal = getLocalPq(tn, controlQubit);
     QCoord targetPqLocal = getLocalPq(tn, targetQubit);
@@ -610,6 +617,8 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
     }
 
 }
+
+
 
 void initVirtualTarget(Tensor tensor, int vqIndex){
     // place target virtual qubit in the zero state

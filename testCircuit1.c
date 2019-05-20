@@ -68,6 +68,16 @@ int main (int narg, char *varg[]) {
     printf("Tensor 1\n");
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
 
+/*
+    // Apply single qubit unitary gate to qubit 1
+    ComplexMatrix2 u;
+    u.r0c0 = (Complex) {.real=.5, .imag=.5};
+    u.r0c1 = (Complex) {.real=.5, .imag=-.5};
+    u.r1c0 = (Complex) {.real=.5, .imag=-.5};
+    u.r1c1 = (Complex) {.real=.5, .imag=.5};
+    tn_unitary(tn, 1, u);
+*/
+
     // Contract
     printf("\n\nContract tensors:\n");
     contractTensors(tn, 0, 1, env);
