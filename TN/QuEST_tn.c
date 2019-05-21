@@ -5,7 +5,7 @@
 #include "QuEST_tn_internal.h"
 #include "QuEST_tn.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG
 # define DEBUG_PRINT(x) printf x

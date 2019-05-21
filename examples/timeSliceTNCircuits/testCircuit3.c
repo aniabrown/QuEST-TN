@@ -34,12 +34,16 @@ int main (int narg, char *varg[]) {
 
     // Apply single qubit gates
     initZeroState(qubits);
-    pauliX(qubits, 0);
+    hadamard(qubits, 0);
+    hadamard(qubits, 1);
+    hadamard(qubits, 2);
     rotateZ(qubits, 0, 0.3); 
+    rotateZ(qubits, 1, 0.5); 
+    rotateZ(qubits, 2, 0.7); 
     reportStateToScreen(qubits, env, 0);
 
     // Apply entangling operation
-    printf("\nAppy controlledNot(0,1)\n");
+    printf("Apply controlledNot(0,2), controlledNot(0,1), controlledNot(0,2):\n");
     controlledNot(qubits, 0, 2);
     controlledNot(qubits, 0, 1);
     controlledNot(qubits, 0, 2);
@@ -63,23 +67,53 @@ int main (int narg, char *varg[]) {
     printf("Tensor 2\n");
     reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
+    printf("Apply single qubit gates\n");
 
     // Apply single qubit gates -- we want a different probability amplitude at each
     // position in the state vector for testing purposes
-    ComplexMatrix2 uPauliX, uRotateZ;
+    ComplexMatrix2 uPauliX, uRotateZ1, uRotateZ2, uRotateZ3, uHadamard;
     uPauliX.r0c0 = (Complex) {.real=0, .imag=0};
     uPauliX.r0c1 = (Complex) {.real=1, .imag=0};
     uPauliX.r1c0 = (Complex) {.real=1, .imag=0};
     uPauliX.r1c1 = (Complex) {.real=0, .imag=0};
 
-    qreal theta = 0.3;
-    uRotateZ.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
-    uRotateZ.r0c1 = (Complex) {.real=0, .imag=0};
-    uRotateZ.r1c0 = (Complex) {.real=0, .imag=0};
-    uRotateZ.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+    uHadamard.r0c0 = (Complex) {.real=1/sqrt(2), .imag=0};
+    uHadamard.r0c1 = (Complex) {.real=1/sqrt(2), .imag=0};
+    uHadamard.r1c0 = (Complex) {.real=1/sqrt(2), .imag=0};
+    uHadamard.r1c1 = (Complex) {.real=-1/sqrt(2), .imag=0};
 
-    tn_unitary(tn, 0, uPauliX);
-    tn_unitary(tn, 0, uRotateZ);
+    qreal theta = 0.3;
+    uRotateZ1.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
+    uRotateZ1.r0c1 = (Complex) {.real=0, .imag=0};
+    uRotateZ1.r1c0 = (Complex) {.real=0, .imag=0};
+    uRotateZ1.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+
+    theta = 0.5;
+    uRotateZ2.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
+    uRotateZ2.r0c1 = (Complex) {.real=0, .imag=0};
+    uRotateZ2.r1c0 = (Complex) {.real=0, .imag=0};
+    uRotateZ2.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+
+    theta = 0.7;
+    uRotateZ3.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
+    uRotateZ3.r0c1 = (Complex) {.real=0, .imag=0};
+    uRotateZ3.r1c0 = (Complex) {.real=0, .imag=0};
+    uRotateZ3.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+
+    //tn_unitary(tn, 0, uPauliX);
+    tn_unitary(tn, 0, uHadamard);
+    tn_unitary(tn, 1, uHadamard);
+    tn_unitary(tn, 2, uHadamard);
+    tn_unitary(tn, 0, uRotateZ1);
+    tn_unitary(tn, 1, uRotateZ2);
+    tn_unitary(tn, 2, uRotateZ3);
+
+    printf("Tensor 0\n");
+    reportStateToScreen(tn.tensors[0].qureg, env, 0);
+    printf("Tensor 1\n");
+    reportStateToScreen(tn.tensors[1].qureg, env, 0);
+    printf("Tensor 2\n");
+    reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
     // Apply entangling operation
     printf("\n\nApply controlledNot(0,2), controlledNot(0,1), controlledNot(0,2):\n");
@@ -96,18 +130,17 @@ int main (int narg, char *varg[]) {
 
     // Contract
 
-
-    printf("\n\nContract tensors 0 and 2:\n");
-    contractTensors(tn, 0, 2, env);
+    printf("\n\nContract tensors 0 and 1:\n");
+    contractTensors(tn, 0, 1, env);
     printTensorNetwork(tn);
     printf("Tensor 0\n");
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
-    printf("Tensor 1\n");
-    reportStateToScreen(tn.tensors[1].qureg, env, 0);
+    printf("Tensor 2\n");
+    reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
 
-    printf("\n\nContract tensors 0 and 1:\n");
-    contractTensors(tn, 0, 1, env);
+    printf("\n\nContract tensors 0 and 2:\n");
+    contractTensors(tn, 0, 2, env);
     printTensorNetwork(tn);
     printf("Tensor 0\n");
     reportStateToScreen(tn.tensors[0].qureg, env, 0);

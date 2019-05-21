@@ -33,9 +33,9 @@ int main (int narg, char *varg[]) {
     reportQuregParams(qubits);
 
     // Apply single qubit gates
-    initZeroState(qubits);
-    pauliX(qubits, 0);
+    initPlusState(qubits);
     rotateZ(qubits, 0, 0.3); 
+    rotateZ(qubits, 1, 0.5); 
     reportStateToScreen(qubits, env, 0);
 
     // Apply entangling operation
@@ -53,28 +53,36 @@ int main (int narg, char *varg[]) {
     int numVqPerTensor[2] = {1, 1};
     printf("\n\nCreate Tensor Network representation:\n");
     TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
+
+    ComplexMatrix2 uHadamard, uRotateZ1, uRotateZ2;
+
+    uHadamard.r0c0 = (Complex) {.real=1/sqrt(2), .imag=0};
+    uHadamard.r0c1 = (Complex) {.real=1/sqrt(2), .imag=0};
+    uHadamard.r1c0 = (Complex) {.real=1/sqrt(2), .imag=0};
+    uHadamard.r1c1 = (Complex) {.real=-1/sqrt(2), .imag=0};
+
+    qreal theta = 0.3;
+    uRotateZ1.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
+    uRotateZ1.r0c1 = (Complex) {.real=0, .imag=0};
+    uRotateZ1.r1c0 = (Complex) {.real=0, .imag=0};
+    uRotateZ1.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+
+    theta = 0.5;
+    uRotateZ2.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
+    uRotateZ2.r0c1 = (Complex) {.real=0, .imag=0};
+    uRotateZ2.r1c0 = (Complex) {.real=0, .imag=0};
+    uRotateZ2.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+
+    tn_unitary(tn, 0, uHadamard);
+    tn_unitary(tn, 1, uHadamard);
+    tn_unitary(tn, 0, uRotateZ1);
+    tn_unitary(tn, 1, uRotateZ2);
+    
     printTensorNetwork(tn);
     printf("Tensor 0\n");
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
     printf("Tensor 1\n");
     reportStateToScreen(tn.tensors[1].qureg, env, 0);
-
-    // Apply single qubit gates -- we want a different probability amplitude at each
-    // position in the state vector for testing purposes
-    ComplexMatrix2 uPauliX, uRotateZ;
-    uPauliX.r0c0 = (Complex) {.real=0, .imag=0};
-    uPauliX.r0c1 = (Complex) {.real=1, .imag=0};
-    uPauliX.r1c0 = (Complex) {.real=1, .imag=0};
-    uPauliX.r1c1 = (Complex) {.real=0, .imag=0};
-
-    qreal theta = 0.3;
-    uRotateZ.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
-    uRotateZ.r0c1 = (Complex) {.real=0, .imag=0};
-    uRotateZ.r1c0 = (Complex) {.real=0, .imag=0};
-    uRotateZ.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
-
-    tn_unitary(tn, 0, uPauliX);
-    tn_unitary(tn, 0, uRotateZ);
 
     // Apply entangling operation
     printf("\n\nApply controlledNot(0,1):\n");
