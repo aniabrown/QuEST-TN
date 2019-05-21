@@ -442,13 +442,6 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
         // create qureg object and initialize to zero
         tmpTensor.qureg = createQureg(tmpTensor.numPq + tmpTensor.numVq, env);
         initZeroState(tmpTensor.qureg);
-        //if (i==0)statevec_initStateDebugFromOffset(tmpTensor.qureg, 0);
-        //if (i==1) hadamard(tmpTensor.qureg, 0);
-        //if (i==1) rotateZ(tmpTensor.qureg, 0, 0.3);
-        //if (i==0) hadamard(tmpTensor.qureg, 0);
-        if (i==0) pauliX(tmpTensor.qureg, 0);
-        if (i==0) rotateZ(tmpTensor.qureg, 0, 0.3);
-        //if (i==1)statevec_initStateDebugFromOffset(tmpTensor.qureg, 2);
 
         // for quick conversion to local index from global index
         tmpTensor.firstGlobalPqIndex = globalPqOffset;

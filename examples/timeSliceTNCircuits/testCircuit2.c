@@ -63,6 +63,24 @@ int main (int narg, char *varg[]) {
     printf("Tensor 2\n");
     reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
+
+    // Apply single qubit gates -- we want a different probability amplitude at each
+    // position in the state vector for testing purposes
+    ComplexMatrix2 uPauliX, uRotateZ;
+    uPauliX.r0c0 = (Complex) {.real=0, .imag=0};
+    uPauliX.r0c1 = (Complex) {.real=1, .imag=0};
+    uPauliX.r1c0 = (Complex) {.real=1, .imag=0};
+    uPauliX.r1c1 = (Complex) {.real=0, .imag=0};
+
+    qreal theta = 0.3;
+    uRotateZ.r0c0 = (Complex) {.real=cos(theta/2), .imag=-sin(theta/2)};
+    uRotateZ.r0c1 = (Complex) {.real=0, .imag=0};
+    uRotateZ.r1c0 = (Complex) {.real=0, .imag=0};
+    uRotateZ.r1c1 = (Complex) {.real=cos(theta/2), .imag=sin(theta/2)};
+
+    tn_unitary(tn, 0, uPauliX);
+    tn_unitary(tn, 0, uRotateZ);
+
     // Apply entangling operation
     printf("\n\nApply controlledNot(0,2), controlledNot(0,1), controlledNot(0,2):\n");
     tn_controlledNot(tn, 0, 2);
