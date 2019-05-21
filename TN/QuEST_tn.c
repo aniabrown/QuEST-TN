@@ -5,7 +5,7 @@
 #include "QuEST_tn_internal.h"
 #include "QuEST_tn.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG
 # define DEBUG_PRINT(x) printf x
@@ -310,7 +310,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
 
     contractedStateVecSize = 1LL << totalNumQ;
     stateVec1Size = 1LL << (tensor1.numPq + tensor1.numVq);
-    stateVec2Size = 1LL << (tensor2.numPq + tensor1.numVq);
+    stateVec2Size = 1LL << (tensor2.numPq + tensor2.numVq);
     stateVec1PhysicalSize = 1LL << tensor1.numPq;
     stateVec2PhysicalSize = 1LL << tensor2.numPq;
 
@@ -326,6 +326,8 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     qreal *stateVec1Imag = qureg1.stateVec.imag;
     qreal *stateVec2Real = qureg2.stateVec.real;
     qreal *stateVec2Imag = qureg2.stateVec.imag;
+
+    DEBUG_PRINT(("activeStateVec1Size %lld, activeStateVec2Size %lld\n", activeStateVec1Size, activeStateVec2Size));
 
     for (activeStateVec2Index=0; activeStateVec2Index<activeStateVec2Size; activeStateVec2Index++) {
         for (activeStateVec1Index=0; activeStateVec1Index<activeStateVec1Size; activeStateVec1Index++) {
@@ -564,7 +566,7 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         // automatically initialized in the zero state
         initVirtualTarget(*controlTensor, virtualTargetIndex + controlTensor->numPq);
         controlTensor->nextVqIndex = controlTensor->nextVqIndex + 1;
-        DEBUG_PRINT(("controlled not 1: %d %d\n", controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq));
+        DEBUG_PRINT(("controlled not tensor 1: %d %d\n", controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq));
         controlledNot(controlTensor->qureg, controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq);
         
         // do target tensor half
@@ -573,7 +575,7 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
         int virtualControlIndex = targetTensor->nextVqIndex;
         initVirtualControl(*targetTensor, virtualControlIndex + targetTensor->numPq);
         targetTensor->nextVqIndex = targetTensor->nextVqIndex + 1;
-        DEBUG_PRINT(("controlled not 2: %d %d\n", virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex));
+        DEBUG_PRINT(("controlled not tensor 2: %d %d\n", virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex));
         controlledNot(targetTensor->qureg, virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
      
         // TODO -- change t1, t2 to control/target 
