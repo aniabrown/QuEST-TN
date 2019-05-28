@@ -14,13 +14,6 @@
 #endif
 
 
-/** Contract all tensors in a tensor network one by one. 
- * The simplest strategy -- contract tensor 0 with every other tensor in turn
- * Output will be stored as tensor 0.
- *
- * @param[in,out] tn tensor network to contract
- * @param[in] env QuEST environment object
- */
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
     for (int i=1; i<tn.numTensors; i++){
         contractTensors(tn, 0, i, env);
@@ -123,88 +116,122 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
 
 /** Get the index in the output state vector where an element resulting from a contraction between two
  * tensors should be placed.
- *
+ * 
+ * @param[in] tensor1FreeIndexEl the index of the element in a state vector made up of only the free indices in tensor1 
+ * @param[in] tensor2FreeIndexEl the index of the element in a state vector made up of only the free indices in tensor2 
+ * @param[in] tensor1PqSize the number of probability amplitudes in a system containing just the physical qubits in tensor1 
+ * @param[in] tensor2PqSize the number of probability amplitudes in a system containing just the physical qubits in tensor2 
+ * @param[in] numTensor1Pq the number of physical qubits in tensor1
+ * @param[in] numTensor2Pq the number of physical qubits in tensor2
+ * @param[in] numTensor1UncontractedVqs the number of virtual qubits which will not be contracted in this operation
+ * 	in tensor1 
+ * @param[in] numTensor1UncontractedVqs the number of virtual qubits which will not be contracted in this operation
+ * 	in tensor2 
+ * @returns the index of the element in the output state vector 
  */
-long long int getContractedIndex(long long int activeStateVec1Index, long long int activeStateVec2Index,
-     long long int stateVec1PhysicalSize, long long int stateVec2PhysicalSize, int numTensor1Pq, int numTensor2Pq,
+long long int getContractedIndex(long long int tensor1FreeIndexEl, long long int tensor2FreeIndexEl,
+     long long int tensor1PqSize, long long int tensor2PqSize, int numTensor1Pq, int numTensor2Pq,
      int numTensor1UncontractedVqs, int numTensor2UncontractedVqs){
             
     long long int contractedIndex;
     long long int stateVec1IndexInPq, stateVec2IndexInPq;
 
-    long long int sizeOutputHalfBlock, sizeActiveHalfBlock;
-    int activeIsLower;
+    long long int sizeOutputHalfBlock, sizeFreeHalfBlock;
+    int freeIsLower;
     long long int stateVectorIndex = 0;
-    long long int activeIndexInBlock;
+    long long int freeIndexInBlock;
 
-    // activeStateVec1Index % sateVec1PhysicalSize = activeStateVec1Index&(stateVec1PhysicalSize-1)
-    stateVec1IndexInPq = activeStateVec1Index&(stateVec1PhysicalSize-1);
-    stateVec2IndexInPq = activeStateVec2Index&(stateVec2PhysicalSize-1);
+    // tensor1FreeIndexEl % sateVec1PhysicalSize = tensor1FreeIndexEl&(tensor1PqSize-1)
+    stateVec1IndexInPq = tensor1FreeIndexEl&(tensor1PqSize-1);
+    stateVec2IndexInPq = tensor2FreeIndexEl&(tensor2PqSize-1);
 
-    DEBUG_PRINT(("getOutputIndex: t1psize %lld t2psize %lld\n", stateVec1PhysicalSize, stateVec2PhysicalSize));
-    contractedIndex = stateVec2IndexInPq*stateVec1PhysicalSize + stateVec1IndexInPq;
+    DEBUG_PRINT(("getOutputIndex: t1psize %lld t2psize %lld\n", tensor1PqSize, tensor2PqSize));
+    contractedIndex = stateVec2IndexInPq*tensor1PqSize + stateVec1IndexInPq;
     DEBUG_PRINT(("getOuputIndex: contractedIndex %lld\n", contractedIndex));
 
     // TODO -- seems inefficient given the only thing changing between this and
     // activeStateVectorIndex is number of Pq (if tensor2 has no uncontracted vq?)
-    activeIndexInBlock = activeStateVec1Index;
+    freeIndexInBlock = tensor1FreeIndexEl;
     for (int i=numTensor1UncontractedVqs-1; i>=0; i--){
         // the size of a block of elements in the state vector for an uncontracted virtual qubit
         sizeOutputHalfBlock = 1LL << (numTensor1Pq + numTensor2Pq + i);
-        sizeActiveHalfBlock = 1LL << (numTensor1Pq + i);
-        activeIsLower = (activeIndexInBlock >= sizeActiveHalfBlock); // TODO -- better to get value of qubit?
-        DEBUG_PRINT(("sizeOutput %lld sizeActive %lld isLower %d\n", sizeOutputHalfBlock, sizeActiveHalfBlock, activeIsLower));
-        if (activeIsLower) {
+        sizeFreeHalfBlock = 1LL << (numTensor1Pq + i);
+        freeIsLower = (freeIndexInBlock >= sizeFreeHalfBlock); // TODO -- better to get value of qubit?
+        DEBUG_PRINT(("sizeOutput %lld sizeActive %lld isLower %d\n", sizeOutputHalfBlock, sizeFreeHalfBlock, freeIsLower));
+        if (freeIsLower) {
             contractedIndex += sizeOutputHalfBlock; // TODO -- replace with predicate
-            activeIndexInBlock -= sizeActiveHalfBlock;
+            freeIndexInBlock -= sizeFreeHalfBlock;
         }
     }
     
-    activeIndexInBlock = activeStateVec2Index;
+    freeIndexInBlock = tensor2FreeIndexEl;
     for (int i=numTensor2UncontractedVqs-1; i>=0; i--){
         // the size of a block of elements in the state vector for an uncontracted virtual qubit
         sizeOutputHalfBlock = 1LL << (numTensor1Pq + numTensor2Pq + numTensor1UncontractedVqs + i);
-        sizeActiveHalfBlock = 1LL << (numTensor2Pq + i);
-        activeIsLower = (activeIndexInBlock >= sizeActiveHalfBlock); // TODO -- better to get value of qubit?
-        DEBUG_PRINT(("sizeOutput %lld sizeActive %lld isLower %d\n", sizeOutputHalfBlock, sizeActiveHalfBlock, activeIsLower));
-        if (activeIsLower) {
+        sizeFreeHalfBlock = 1LL << (numTensor2Pq + i);
+        freeIsLower = (freeIndexInBlock >= sizeFreeHalfBlock); // TODO -- better to get value of qubit?
+        DEBUG_PRINT(("sizeOutput %lld sizeActive %lld isLower %d\n", sizeOutputHalfBlock, sizeFreeHalfBlock, freeIsLower));
+        if (freeIsLower) {
             contractedIndex += sizeOutputHalfBlock; // TODO -- replace with predicate
-            activeIndexInBlock -= sizeActiveHalfBlock;
+            freeIndexInBlock -= sizeFreeHalfBlock;
         }
     }
 
     return contractedIndex;
 }
 
-long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex,
+/** Get the corresponding index in the full state vector for a tensor, given an element in a state vector made up of 
+ * only the free indices in that tensor. The index in the full state vector will have all physical qubits and 
+ * uncontracted virtual qubits with the same value as the input element. 
+ * 
+ * @param[in] freeIndexEl the index of the element in a state vector made up of only the free indices in a tensor
+ * @param[in] numPq the number of physical qubits in that tensor
+ * @param[in] uncontractedVqs a list of vq indices that will not be contracted
+ * @param[in] the number of elements in uncontractedVqs
+ * @returns the index of the element in the full state vector
+*/
+long long int getStateVectorIndexFromFreeIndexEl(long long int freeIndexEl,
         int numPq, int *uncontractedVqs, int numUncontractedVqs){
 
-    long long int sizeHalfBlock, sizeActiveHalfBlock;
-    int activeIsLower;
-    long long int activeStatePhysicalSize = 1LL << numPq;
-    long long int indexInPhysicalQubitBlock = activeStateIndex&(activeStatePhysicalSize-1); 
+    long long int sizeHalfBlock, sizeFreeHalfBlock;
+    int freeIsLower;
+    long long int pqSize = 1LL << numPq;
+    long long int indexInPhysicalQubitBlock = freeIndexEl&(pqSize-1); 
     long long int stateVectorIndex = indexInPhysicalQubitBlock;
-    long long int activeIndexInBlock = activeStateIndex;
+    long long int freeIndexInBlock = freeIndexEl;
     for (int i=numUncontractedVqs-1; i>=0; i--){
         int vqIndex = uncontractedVqs[i];
         // the size of a block of elements in the state vector for an uncontracted virtual qubit
         sizeHalfBlock = 1LL << (numPq + vqIndex);
-        sizeActiveHalfBlock = 1LL << (numPq + i);
-        activeIsLower = (activeIndexInBlock >= sizeActiveHalfBlock); // TODO -- better to get value of qubit?
-        if (activeIsLower) {
+        sizeFreeHalfBlock = 1LL << (numPq + i);
+        freeIsLower = (freeIndexInBlock >= sizeFreeHalfBlock); // TODO -- better to get value of qubit?
+        if (freeIsLower) {
             stateVectorIndex += sizeHalfBlock; // TODO -- replace with predicate
-            activeIndexInBlock -= sizeActiveHalfBlock;
+            freeIndexInBlock -= sizeFreeHalfBlock;
         }
    }
     return stateVectorIndex;
 }
 
+/** For a particular element in tensor1 and a particular element in tensor2, recursively contract across all virtual qubits 
+ * that represent entanglements between the two tensors. The elements in each tensor will always represent probability
+ * amplitudes where all virtual qubits to contract are equal to zero.
+ * 
+ * @param[in] tensor1 the first tensor to contract. 
+ * @param[in] tensor2 the second tensor to contract.
+ * @param[in] tensor1Offset an element in the tensor1 state vector where all qubits to contract are equal to zero
+ * @param[in] tensor2Offset an element in the tensor2 state vector where all qubits to contract are equal to zero
+ * @param[in] tensor1Contractions a list of virtual qubit indices to contract with the tensor2 indices
+ * @param[in] tensor2Contractions a list of virtual qubit indices to contract with the tensor1 indices 
+ * @param[in] numContractions the number of indices to contract
+ * @param[in] the current index in the tensor1Contractions/tensor2Contractions list 
+ * @returns one element in the output tensor after contraction
+ */
 Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset, 
         long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions, 
         int numContractions, int vqIndex){
 
     DEBUG_PRINT(("recursive step. vqIndex: %d t1vqToContract %d\n", vqIndex, tensor1Contractions[vqIndex]));
-    //TODO -- numPq will need to be numPq + numUnusedLowVq
     long long int tensor1OffsetNew = tensor1Offset + (1LL << (tensor1.numPq+tensor1Contractions[vqIndex]) );
     long long int tensor2OffsetNew = tensor2Offset + (1LL << (tensor2.numPq+tensor2Contractions[vqIndex]) );
 
@@ -304,18 +331,18 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     int totalNumVq = numTensor1UncontractedVqs + numTensor2UncontractedVqs;
     int totalNumQ = totalNumPq + totalNumVq;
 
-    long long int contractedStateVecSize, stateVec1Size, stateVec2Size, activeStateVec1Size, activeStateVec2Size;
-    long long int contractedIndex, stateVec1Index, stateVec2Index, activeStateVec1Index, activeStateVec2Index;
-    long long int stateVec1PhysicalSize, stateVec2PhysicalSize;
+    long long int contractedStateVecSize, stateVec1Size, stateVec2Size, tensor1FreeIndexSize, tensor2FreeIndexSize;
+    long long int contractedIndex, stateVec1Index, stateVec2Index, tensor1FreeIndexEl, tensor2FreeIndexEl;
+    long long int tensor1PqSize, tensor2PqSize;
 
     contractedStateVecSize = 1LL << totalNumQ;
     stateVec1Size = 1LL << (tensor1.numPq + tensor1.numVq);
     stateVec2Size = 1LL << (tensor2.numPq + tensor2.numVq);
-    stateVec1PhysicalSize = 1LL << tensor1.numPq;
-    stateVec2PhysicalSize = 1LL << tensor2.numPq;
+    tensor1PqSize = 1LL << tensor1.numPq;
+    tensor2PqSize = 1LL << tensor2.numPq;
 
-    activeStateVec1Size = stateVec1Size >> numContractions;
-    activeStateVec2Size = stateVec2Size >> numContractions;
+    tensor1FreeIndexSize = stateVec1Size >> numContractions;
+    tensor2FreeIndexSize = stateVec2Size >> numContractions;
 
     Qureg contractedQureg = createQureg(totalNumQ, env);
     Qureg qureg1 = tensor1.qureg;
@@ -327,25 +354,25 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     qreal *stateVec2Real = qureg2.stateVec.real;
     qreal *stateVec2Imag = qureg2.stateVec.imag;
 
-    DEBUG_PRINT(("activeStateVec1Size %lld, activeStateVec2Size %lld\n", activeStateVec1Size, activeStateVec2Size));
+    DEBUG_PRINT(("tensor1FreeIndexSize %lld, tensor2FreeIndexSize %lld\n", tensor1FreeIndexSize, tensor2FreeIndexSize));
 
-    for (activeStateVec2Index=0; activeStateVec2Index<activeStateVec2Size; activeStateVec2Index++) {
-        for (activeStateVec1Index=0; activeStateVec1Index<activeStateVec1Size; activeStateVec1Index++) {
-            stateVec1Index = getStateVectorIndexFromActiveIndex(activeStateVec1Index, tensor1.numPq,
+    for (tensor2FreeIndexEl=0; tensor2FreeIndexEl<tensor2FreeIndexSize; tensor2FreeIndexEl++) {
+        for (tensor1FreeIndexEl=0; tensor1FreeIndexEl<tensor1FreeIndexSize; tensor1FreeIndexEl++) {
+            stateVec1Index = getStateVectorIndexFromFreeIndexEl(tensor1FreeIndexEl, tensor1.numPq,
                     tensor1UncontractedVqs, numTensor1UncontractedVqs);
-            stateVec2Index = getStateVectorIndexFromActiveIndex(activeStateVec2Index, tensor2.numPq,
+            stateVec2Index = getStateVectorIndexFromFreeIndexEl(tensor2FreeIndexEl, tensor2.numPq,
                     tensor2UncontractedVqs, numTensor2UncontractedVqs);
             DEBUG_PRINT(("-------------------------\n"));
-            DEBUG_PRINT(("t1: ai %lld si %lld\n", activeStateVec1Index, stateVec1Index));
-            DEBUG_PRINT(("t2: ai %lld si %lld\n", activeStateVec2Index, stateVec2Index));
+            DEBUG_PRINT(("t1: ai %lld si %lld\n", tensor1FreeIndexEl, stateVec1Index));
+            DEBUG_PRINT(("t2: ai %lld si %lld\n", tensor2FreeIndexEl, stateVec2Index));
 
             Complex sum;
 
             sum = recursiveContract(tensor1, tensor2, stateVec1Index, stateVec2Index, 
                 tensor1Contractions, tensor2Contractions, numContractions, 0);
 
-            contractedIndex = getContractedIndex(activeStateVec1Index, activeStateVec2Index, 
-                    stateVec1PhysicalSize, stateVec2PhysicalSize, tensor1.numPq, tensor2.numPq,
+            contractedIndex = getContractedIndex(tensor1FreeIndexEl, tensor2FreeIndexEl, 
+                    tensor1PqSize, tensor2PqSize, tensor1.numPq, tensor2.numPq,
                     numTensor1UncontractedVqs, numTensor2UncontractedVqs);
             DEBUG_PRINT(("OUTPUT: %lld VALUE: %f\n", contractedIndex, sum.real));
             contractedQureg.stateVec.real[contractedIndex] = sum.real;
@@ -358,18 +385,18 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     // first tensor's vqVertices
     VqVertex *tail=NULL;
     int foundHead=0;
-    removeContractedVqVertices(tn, tensor1Index, tensor1Index, tn.tensorHeadVqVertex[tensor1Index],
+    removeContractedVqVertices(tn, tensor1Index, tensor1Index,
             NULL, tensor1UncontractedVqs, numTensor1UncontractedVqs, &tail, &foundHead);
 
     // second tensor's vqVertices
     if (foundHead){
         // there was at least one uncontracted index in the first tensor
         tail->nextInTensor = tn.tensorHeadVqVertex[tensor2Index];
-        removeContractedVqVertices(tn, tensor2Index, tensor1Index, tail->nextInTensor, tail,
+        removeContractedVqVertices(tn, tensor2Index, tensor1Index, tail,
                 tensor2UncontractedVqs, numTensor2UncontractedVqs, &tail, &foundHead);
     } else {
-        // there were no uncontracted index in the first tensor
-        removeContractedVqVertices(tn, tensor2Index, tensor1Index, tn.tensorHeadVqVertex[tensor2Index], 
+        // there were no uncontracted indices in the first tensor
+        removeContractedVqVertices(tn, tensor2Index, tensor1Index, 
                 NULL, tensor2UncontractedVqs, numTensor2UncontractedVqs, &tail, &foundHead);
     }
 
@@ -461,8 +488,10 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
 
     return tn;
 }
- 
-// Assumes each tensor has the correct numPq and updates tensorIndexFromGlobalPq to be correct
+
+/** Updates tensorIndexFromGlobalPq to be consistent with changes made to numPq on a tensor
+ * @param[in,out] tn The tensor network object to update
+ */ 
 void remapTensorIndexFromGlobalPq(TensorNetwork tn){
     int currentPq = 0;
     for (int i=0; i<tn.numTensors; i++){
@@ -474,6 +503,9 @@ void remapTensorIndexFromGlobalPq(TensorNetwork tn){
 
 }
 
+/** Updates firstGlobalPqIndex to be consistent with changes made to numPq on a tensor
+ * @param[in,out] tn The tensor network object to update
+ */ 
 void remapFirstGlobalPqIndex(TensorNetwork tn){
     int globalPqOffset = 0;
     for (int i=0; i<tn.numTensors; i++){
@@ -483,24 +515,28 @@ void remapFirstGlobalPqIndex(TensorNetwork tn){
     }
 }
 
-void removeAllVqVertices(TensorNetwork tn, int tensorIndex){
-    VqVertex *prevVqVertex;
-    VqVertex *vqVertex = tn.tensorHeadVqVertex[tensorIndex];
-    while (vqVertex != NULL){
-        prevVqVertex = vqVertex;
-        vqVertex = vqVertex->nextInTensor;
-        free(prevVqVertex);
-    }
-}
-
+/** Remove vqVertex objects from the linked list of virtual qubits in a tensor after those virtual
+ * qubit indices have been contracted away. Free any vqVertex objects that have been removed in this way.
+ * The first vertex to keep across both tensors should be marked as the head of the list. If this
+ * function is called on the second tensor, the tail of the previous linked list should be linked to the
+ * head of the second tensor's linked list.
+ *
+ * @param[in,out] TensorNetwork tn the tensor network object to update
+ * @param[in] tensorIndex the tensor index of the linked list being traversed and freed. 
+ * @param[in] newTensorIndex the index of the output tensor, ie the first tensor in the contraction
+ * @param[in] uncontractedVqs list of virtual qubit indices which have not been contracted out
+ * @param[in] numUncontractedVqs the number of elements in the uncontractedVqs list
+ * @param[in] tail the location to store a pointer to the remaining vqVertex at the end of the list
+ * @paramp[in,out] whether or not an uncontracted vqVertex has been found yet (eg in the previous tensor)
+ */
 void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensorIndex,
-        VqVertex *startingVqVertex, VqVertex *prevVqVertexToKeep,
+        VqVertex *prevVqVertexToKeep,
         int *uncontractedVqs, int numUncontractedVqs, VqVertex **tail, int *foundHead){
 
     VqVertex *vqVertex, *prevVqVertex;
     int vqVertexCount = 0;
     int uncontractedVqCount = 0;
-    vqVertex = startingVqVertex;
+    vqVertex = tn.tensorHeadVqVertex[tensorIndex];
     // Search through vertices and keep those which are in uncontractedVqs.
     // Free vertices which no longer need to be stored
     while (vqVertex != NULL){

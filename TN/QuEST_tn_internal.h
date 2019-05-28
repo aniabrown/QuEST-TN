@@ -31,10 +31,8 @@ void initVirtualControl(Tensor tensor, int vqIndex);
 
 // ----- VQ GRAPH UTILITY --------------------------------------------------------------
 
-void removeAllVqVertices(TensorNetwork tn, int tensorIndex);
-
 void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensorIndex,
-        VqVertex *startingVqVertex, VqVertex *prevVqVertexToKeep,
+        VqVertex *prevVqVertexToKeep,
         int *uncontractedVqs, int numUncontractedVqs, VqVertex **tail, int *foundHead);
 
 
