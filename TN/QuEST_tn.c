@@ -650,19 +650,20 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
 }
 
 
-
+/** Place target virtual qubit in the zero state
+ * @param[in,out] tensor the tensor object
+ * @param[in] virtual qubit to initialize. Index is local to a tensor but includes all physical qubits in the tensor
+ */
 void initVirtualTarget(Tensor tensor, int vqIndex){
-    // place target virtual qubit in the zero state
-    
      collapseToOutcome(tensor.qureg, vqIndex, 0);
 }
 
+/** Initialize virtual qubit to |0> + |1> 
+ * NOTE: not (1/sqrt(2))(|0> + |1>)
+ * @param[in,out] tensor the tensor object
+ * @param[in] virtual qubit to initialize. Index is local to a tensor but includes all physical qubits in the tensor
+ */
 void initVirtualControl(Tensor tensor, int vqIndex){
-    // initialize qubit vqIndex to |0> + |1> 
-    // NOTE: not (1/sqrt(2))(|0> + |1>)
-
-    // TODO: add API funtions to do this instead?
-
     Qureg qureg = tensor.qureg;
 
     long long int stateVecSize;
@@ -694,6 +695,14 @@ void initVirtualControl(Tensor tensor, int vqIndex){
 
 
 // ----- utility --------------------------------------------------------------
+
+/** Get the index of a physical qubit within a tensor from a global index which expects all
+ * tensors to be ordered as in TensorNetwork.tensors 
+ * 
+ * @param[in] tn the tensor network object
+ * @param[in] globalPq the index of the physical qubit in the global system
+ * @returns the tensor and local index within the tensor of the qubit 
+ */
 QCoord getLocalPq(TensorNetwork tn, int globalPq){
     QCoord localPq;
     localPq.tensorIndex = tn.tensorIndexFromGlobalPq[globalPq];
@@ -703,6 +712,14 @@ QCoord getLocalPq(TensorNetwork tn, int globalPq){
 
 // ----- reporting ------------------------------------------------------------
 
+/** Get the index of the virtual qubit in the list of virtual qubits in that tensor from a 
+ * VqVertex object. Note that this is inefficient as it counts from the vqVertex to the end
+ * of the linked list.
+ *
+ * @param[in] tn the tensor network object
+ * @param[in] a pointer to the virtual qubit vertex to locate
+ * @returns the index of the virtual qubit
+ */
 int getVqVertexIndex(TensorNetwork tn, VqVertex *vqVertex){
     int verticesUntilEndInclusive=0;
     int totalVertices = tn.numEntanglements[vqVertex->tensorIndex];
