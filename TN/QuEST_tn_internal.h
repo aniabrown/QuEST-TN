@@ -3,6 +3,23 @@
 
 # include "QuEST_tn.h"
 
+/** @file
+ * Internal QuEST-TN functions
+
+    Naming conventions:
+
+    See QuEST_tn.h for public API naming conventions
+
+    Free indices are defined for a particular contraction between two tensors and 
+    refer to physical qubits and virtual qubits which will not be contracted away
+    in that particular contraction. freeIndexEl refers to an element in the state vector that
+    could be constructed for a system containing only those qubits. This is slightly awkward and
+    arbitrary but is a way to distinguish between two types of indices -- contration index, ie
+    index in the list of qubits and index in a state vector (called an el).
+
+**/
+
+
 // ----- TENSOR CONTRACTIONS ------------------------------------------------------
 
 int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index);
