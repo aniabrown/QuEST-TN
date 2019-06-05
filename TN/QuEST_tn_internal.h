@@ -12,11 +12,11 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     int *numTensor1UncontractedVqs, int *numTensor2UncontractedVqs,
     int **tensor1UncontractedVqs, int **tensor2UncontractedVqs);
 
-long long int getContractedIndex(long long int activeStateVec1Index, long long int activeStateVec2Index,
-     long long int stateVec1PhysicalSize, long long int stateVec2PhysicalSize, int numTensor1Pq, int numTensor2Pq,
+long long int getContractedIndex(long long int tensor1FreeIndexSize, long long int tensor2FreeIndexSize,
+     long long int tensor1PqSize, long long int tensor2PqSize, int numTensor1Pq, int numTensor2Pq,
      int numTensor1UncontractedVqs, int numTensor2UncontractedVqs);
 
-long long int getStateVectorIndexFromActiveIndex(long long int activeStateIndex,
+long long int getStateVectorIndexFromFreeIndexEl(long long int freeIndexEl,
     int numPq, int *uncontractedVqs, int numUncontractedVqs);
 
 Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset,
@@ -31,10 +31,8 @@ void initVirtualControl(Tensor tensor, int vqIndex);
 
 // ----- VQ GRAPH UTILITY --------------------------------------------------------------
 
-void removeAllVqVertices(TensorNetwork tn, int tensorIndex);
-
 void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensorIndex,
-        VqVertex *startingVqVertex, VqVertex *prevVqVertexToKeep,
+        VqVertex *prevVqVertexToKeep,
         int *uncontractedVqs, int numUncontractedVqs, VqVertex **tail, int *foundHead);
 
 
