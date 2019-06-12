@@ -77,8 +77,6 @@ typedef struct TensorNetwork {
     int *numEntanglements;
 } TensorNetwork;
 
-
-
 // ----- TENSOR NETWORK INITIALISATION -------------------------------------------------------
 
 /** Allocate memory for and initialize a new tensor network object given the number

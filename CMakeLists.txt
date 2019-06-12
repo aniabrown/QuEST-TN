@@ -19,16 +19,6 @@ set(QuEST_UTIL_DIR_NAME "utilities" CACHE STRING
 # ----- QuEST LIBRARY ---------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-# Build the QuEST library if the path to libQuEST.so is not specified
-if (NOT DEFINED ${QuEST_LIB_PATH})
-    # Build libQuEST.so
-    set(QuEST_DIR "QuEST" CACHE STRING 
-        "Name of the directory containing the QuEST library sources. It must be located in the same directory as the root CMakeLists.txt")
-    add_subdirectory(${QuEST_DIR})
-    set(QuEST_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/${QuEST_DIR}")
-    set(QuEST_LIB_EXACT "${QuEST_LIB_PATH}/libQuEST.so")
-endif()
-
 
 # -----------------------------------------------------------------------------
 # ----- USER EXECUTABLE -------------------------------------------------------
@@ -39,14 +29,10 @@ message(STATUS "Compiling ${USER_SOURCE} to executable ${OUTPUT_EXE}")
 add_subdirectory(TN)
 
 # Create user executable
-add_executable(${OUTPUT_EXE} ${USER_SOURCE} ${TN_SRC})
-
-target_include_directories(${OUTPUT_EXE}
-    PRIVATE TN
-)
+add_executable(${OUTPUT_EXE} ${USER_SOURCE})
 
 # Link libraries to user executable, including QuEST library
-target_link_libraries(${OUTPUT_EXE} QuEST m)
+target_link_libraries(${OUTPUT_EXE} TN m)
 
 # -----------------------------------------------------------------------------
 # ----- UTILS -----------------------------------------------------------------

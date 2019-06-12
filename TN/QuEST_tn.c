@@ -435,6 +435,7 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
     TensorNetwork tn;
     tn.numTensors = numTensors;
 
+
     // allocate memory in tensor object
     tn.tensors = malloc( numTensors*sizeof(*(tn.tensors)) );
     tn.tensorHeadVqVertex = malloc( numTensors*sizeof(*(tn.tensorHeadVqVertex)) );
@@ -488,6 +489,7 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
 
     return tn;
 }
+
 
 /** Updates tensorIndexFromGlobalPq to be consistent with changes made to numPq on a tensor
  * @param[in,out] tn The tensor network object to update
