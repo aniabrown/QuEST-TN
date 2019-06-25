@@ -1,21 +1,18 @@
-#!/usr/bin/env python3
-
 from ctypes import *
-import os.path
 from QuESTPy.QuESTBase import init_QuESTLib
-from QuESTPy.QuESTBase_TN import init_TNLib
+from TNPy.TNBase import init_TNLib
 from QuESTPy.QuESTLibDir import defaultQuESTDir
 
 # If set up
-QuESTPath = "../build/TN/QuEST/"
-TNPath = "../build/TN/"
+QuESTPath = "build/TN/QuEST/"
+TNPath = "build/TN/"
 
 init_QuESTLib(QuESTPath)
 init_TNLib(TNPath)
 
-
+#!/usr/bin/env python3
 from QuESTPy.QuESTFunc import *
-from QuESTPy.QuESTFunc_TN import *
+from TNPy.TNFunc import *
 
 def TN_singleQubitGate(gate, tn, *args):
     pq = getLocalPq(tn, args[0]) 

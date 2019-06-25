@@ -1,5 +1,5 @@
-from .QuESTTypes import *
-from .QuESTTypes_TN import *
+from QuESTPy.QuESTTypes import *
+from .TNTypes import *
 
 # Public API
 

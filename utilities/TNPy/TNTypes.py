@@ -1,5 +1,5 @@
-from .QuESTTypes import *
-from .QuESTBase_TN import *
+from QuESTPy.QuESTTypes import *
+from .TNBase import *
 
 class QCoord(Structure):
     _fields_ = [("tensorIndex", c_int), 
