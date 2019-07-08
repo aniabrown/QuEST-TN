@@ -585,78 +585,99 @@ void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u){
     unitary(targetTensor->qureg, targetPqLocal.qIndex, u);
 }
 
+int getControlGateIsLocal(TensorNetwork tn, const int controlQubit, const int targetQubit){
+    QCoord controlPqLocal = getLocalPq(tn, controlQubit);
+    QCoord targetPqLocal = getLocalPq(tn, targetQubit);
+    if (controlPqLocal.tensorIndex == targetPqLocal.tensorIndex) return 1;
+    else return 0;
+}
 
 void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int targetQubit){
     QCoord controlPqLocal = getLocalPq(tn, controlQubit);
     QCoord targetPqLocal = getLocalPq(tn, targetQubit);
 
-    Tensor *controlTensor = &(tn.tensors[controlPqLocal.tensorIndex]);
-
-    if (controlPqLocal.tensorIndex == targetPqLocal.tensorIndex){
+    if (getControlGateIsLocal(tn, controlQubit, targetQubit)){
         // qubits are in same tensor/qureg. Just do a normal qureg operation
         controlledNot(controlTensor->qureg, controlPqLocal.qIndex, targetPqLocal.qIndex);
     } else {
         // qubits are in different tensor/qureg
         // do control tensor half
         // TODO: note this won't work if doing multiple different operations on the same tensor in parallel 
-        int virtualTargetIndex = controlTensor->nextVqIndex;
-        // TODO -- shouldn't have to initialize virtual target when virtual qubits are
-        // automatically initialized in the zero state
-        initVirtualTarget(*controlTensor, virtualTargetIndex + controlTensor->numPq);
-        controlTensor->nextVqIndex = controlTensor->nextVqIndex + 1;
+        Tensor controlTensor = getTensor(tn, controlQubit);
+        int virtualTargetIndex = incrementVqIndex(tn, controlQubit);
+        initVirtualTarget(controlTensor, virtualTargetIndex);
         DEBUG_PRINT(("controlled not tensor 1: %d %d\n", controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq));
-        controlledNot(controlTensor->qureg, controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq);
+        controlledNot(controlTensor.qureg, controlPqLocal.qIndex, virtualTargetIndex + controlTensor.numPq);
         
         // do target tensor half
         // TODO: note this won't work if doing multiple different operations on the same tensor in parallel 
-        Tensor *targetTensor = &(tn.tensors[targetPqLocal.tensorIndex]);
-        int virtualControlIndex = targetTensor->nextVqIndex;
-        initVirtualControl(*targetTensor, virtualControlIndex + targetTensor->numPq);
-        targetTensor->nextVqIndex = targetTensor->nextVqIndex + 1;
+        Tensor targetTensor = getTensor(tn, targetQubit);
+        int virtualControlIndex = incrementVqIndex(tn, targetQubit);
+        initVirtualControl(targetTensor, virtualControlIndex);
         DEBUG_PRINT(("controlled not tensor 2: %d %d\n", virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex));
-        controlledNot(targetTensor->qureg, virtualControlIndex + targetTensor->numPq, targetPqLocal.qIndex);
-     
-        // TODO -- change t1, t2 to control/target 
-        // update adjacency list. 
-        // tensor1
-        VqVertex *tensor1VqVertex = malloc(sizeof(*tensor1VqVertex));
-        tensor1VqVertex->nextInTensor = NULL;
-        tensor1VqVertex->tensorIndex = targetPqLocal.tensorIndex;
-        if (tn.tensorTailVqVertex[targetPqLocal.tensorIndex] != NULL){
-                tn.tensorTailVqVertex[targetPqLocal.tensorIndex]->nextInTensor = tensor1VqVertex;
-        }
-        tn.tensorTailVqVertex[targetPqLocal.tensorIndex] = tensor1VqVertex;
-        if (tn.numEntanglements[targetPqLocal.tensorIndex]==0) {
-            tn.tensorHeadVqVertex[targetPqLocal.tensorIndex] = tensor1VqVertex;
-        }
+        controlledNot(targetTensor.qureg, virtualControlIndex + targetTensor.numPq, targetPqLocal.qIndex);
 
-        // tensor2
-        VqVertex *tensor2VqVertex = malloc(sizeof(*tensor2VqVertex));
-        tensor2VqVertex->nextInTensor = NULL;
-        tensor2VqVertex->tensorIndex = controlPqLocal.tensorIndex;
-        if (tn.tensorTailVqVertex[controlPqLocal.tensorIndex] != NULL){
-                tn.tensorTailVqVertex[controlPqLocal.tensorIndex]->nextInTensor = tensor2VqVertex;
-        }
-        tn.tensorTailVqVertex[controlPqLocal.tensorIndex] = tensor2VqVertex;
-        if (tn.numEntanglements[controlPqLocal.tensorIndex]==0) {
-            tn.tensorHeadVqVertex[controlPqLocal.tensorIndex] = tensor2VqVertex;
-        }
-
-        tensor1VqVertex->entangledPair = tensor2VqVertex;
-        tensor2VqVertex->entangledPair = tensor1VqVertex;
-
-        tn.numEntanglements[controlPqLocal.tensorIndex]++;
-        tn.numEntanglements[targetPqLocal.tensorIndex]++;
+        updateTNForControlGate(tn, controlQubit, targetQubit);
     }
 
 }
 
+Tensor getTensor(TensorNetwork tn, int globalPq){
+    QCoord pq = getLocalPq(tn, globalPq);
+    return tn.tensors[pq.tensorIndex];
+}
+
+void updateTNForControlGate(TensorNetwork tn, const int controlQubit, const int targetQubit){
+    // TODO: Could avoid recalculating this
+    QCoord controlPqLocal = getLocalPq(tn, controlQubit);
+    QCoord targetPqLocal = getLocalPq(tn, targetQubit);
+
+    // TODO -- change t1, t2 to control/target 
+    // update adjacency list. 
+    // tensor1
+    VqVertex *tensor1VqVertex = malloc(sizeof(*tensor1VqVertex));
+    tensor1VqVertex->nextInTensor = NULL;
+    tensor1VqVertex->tensorIndex = targetPqLocal.tensorIndex;
+    if (tn.tensorTailVqVertex[targetPqLocal.tensorIndex] != NULL){
+            tn.tensorTailVqVertex[targetPqLocal.tensorIndex]->nextInTensor = tensor1VqVertex;
+    }
+    tn.tensorTailVqVertex[targetPqLocal.tensorIndex] = tensor1VqVertex;
+    if (tn.numEntanglements[targetPqLocal.tensorIndex]==0) {
+        tn.tensorHeadVqVertex[targetPqLocal.tensorIndex] = tensor1VqVertex;
+    }
+
+    // tensor2
+    VqVertex *tensor2VqVertex = malloc(sizeof(*tensor2VqVertex));
+    tensor2VqVertex->nextInTensor = NULL;
+    tensor2VqVertex->tensorIndex = controlPqLocal.tensorIndex;
+    if (tn.tensorTailVqVertex[controlPqLocal.tensorIndex] != NULL){
+            tn.tensorTailVqVertex[controlPqLocal.tensorIndex]->nextInTensor = tensor2VqVertex;
+    }
+    tn.tensorTailVqVertex[controlPqLocal.tensorIndex] = tensor2VqVertex;
+    if (tn.numEntanglements[controlPqLocal.tensorIndex]==0) {
+        tn.tensorHeadVqVertex[controlPqLocal.tensorIndex] = tensor2VqVertex;
+    }
+
+    tensor1VqVertex->entangledPair = tensor2VqVertex;
+    tensor2VqVertex->entangledPair = tensor1VqVertex;
+
+    tn.numEntanglements[controlPqLocal.tensorIndex]++;
+    tn.numEntanglements[targetPqLocal.tensorIndex]++;
+}
+
+int incrementVqIndex(TensorNetwork tn, int globalPq){
+     QCoord pq = getLocalPq(tn, globalPq);
+     Tensor *tensor = &(tn.tensors[pq.tensorIndex]);
+     int index = tensor->nextVqIndex;
+     tensor->nextVqIndex = tensor->nextVqIndex + 1;
+     return index;
+}
 
 /** Place target virtual qubit in the zero state
  * @param[in,out] tensor the tensor object
- * @param[in] virtual qubit to initialize. Index is local to a tensor but includes all physical qubits in the tensor
  */
-void initVirtualTarget(Tensor tensor, int vqIndex){
+void initVirtualTarget(Tensor tensor, int virtualTargetIndex){
+     int vqIndex = virtualTargetIndex + tensor.numPq;
      collapseToOutcome(tensor.qureg, vqIndex, 0);
 }
 
@@ -665,7 +686,8 @@ void initVirtualTarget(Tensor tensor, int vqIndex){
  * @param[in,out] tensor the tensor object
  * @param[in] virtual qubit to initialize. Index is local to a tensor but includes all physical qubits in the tensor
  */
-void initVirtualControl(Tensor tensor, int vqIndex){
+void initVirtualControl(Tensor tensor, int virtualControlIndex){
+    int vqIndex = virtualControlIndex + tensor.numPq;
     Qureg qureg = tensor.qureg;
 
     long long int stateVecSize;

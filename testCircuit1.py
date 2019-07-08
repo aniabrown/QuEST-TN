@@ -13,10 +13,7 @@ init_TNLib(TNPath)
 #!/usr/bin/env python3
 from QuESTPy.QuESTFunc import *
 from TNPy.TNFunc import *
-
-def TN_singleQubitGate(gate, tn, *args):
-    pq = getLocalPq(tn, args[0]) 
-    gate(tn.tensors[pq.tensorIndex].qureg, pq.qIndex, *args[1:]);
+from TNPy.TNAdditionalGates import *
 
 env = createQuESTEnv()
 
@@ -42,8 +39,8 @@ reportStateToScreen(tn.tensors[0].qureg, env, 0)
 TN_singleQubitGate(pauliX, tn, 1)
 reportStateToScreen(tn.tensors[0].qureg, env, 0)
 
-"""
-tn_controlledNot(tn, 0, 1)
+##tn_controlledNot(tn, 0, 1)
+TN_controlledGate(controlledNot, tn, 0, 1)
 tn_unitary(tn, 0, u)
 
 printTensorNetwork(tn)
@@ -54,7 +51,6 @@ contractTensorNetwork(tn, env)
 
 printTensorNetwork(tn)
 reportStateToScreen(tn.tensors[0].qureg, env, 0)
-"""
 
 
 
