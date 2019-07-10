@@ -13,7 +13,7 @@ def TN_controlledGate(gate, tn, *args):
     controlPq = getLocalPq(tn, controlQubit) 
     targetPq = getLocalPq(tn, targetQubit) 
     if (is_local):
-        gate(tn.tensors[controlPq.tensorIndex].qureg, controlPq.qIndex, targetPq.qIndex, *ags[2:])
+        gate(tn.tensors[controlPq.tensorIndex].qureg, controlPq.qIndex, targetPq.qIndex, *args[2:])
     else:
         controlTensor = getTensor(tn, controlQubit)
         virtualTargetIndex = incrementVqIndex(tn, controlQubit)
