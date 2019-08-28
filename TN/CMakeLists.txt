@@ -20,6 +20,8 @@
 # ----- FIND PACKAGES ---------------------------------------------------------
 # -----------------------------------------------------------------------------
 
+find_package(LAPACK)
+find_library(HPTT_LIB_PATH hptt ../lib)
 
 # -----------------------------------------------------------------------------
 # ----- SET COMPILER FLAGS ----------------------------------------------------
@@ -120,7 +122,7 @@ endif()
 
 
 add_library(TN SHARED
-    QuEST_tn.c
+    QuEST_tn.cpp
     )
 
 # ----- Location of header files ----------------------------------------------
@@ -128,6 +130,10 @@ add_library(TN SHARED
 target_include_directories(TN
     PUBLIC .
 )
+
+target_include_directories(TN
+    PUBLIC
+    "/home/ania/Documents/no_sync/hptt/include")
 
 
 # ----- Definitions -----------------------------------------------------------
@@ -140,7 +146,7 @@ target_include_directories(TN
 
 add_subdirectory(QuEST)
 
-target_link_libraries(TN QuEST)
+target_link_libraries(TN QuEST lapack blas ${HPTT_LIB_PATH})
 
 
 

@@ -52,6 +52,10 @@ int incrementVqIndex(TensorNetwork tn, int globalPq);
 
 // ----- VQ GRAPH UTILITY --------------------------------------------------------------
 
+void updateTensorGraphForContraction(TensorNetwork tn, int tensor1Index, int tensor2Index,
+        int *tensor1UncontractedVqs, int numTensor1UncontractedVqs,
+        int *tensor2UncontractedVqs, int numTensor2UncontractedVqs);
+
 void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensorIndex,
         VqVertex *prevVqVertexToKeep,
         int *uncontractedVqs, int numUncontractedVqs, VqVertex **tail, int *foundHead);

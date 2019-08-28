@@ -2,13 +2,13 @@
 cmake_minimum_required(VERSION 3.1)
 
 # Project name
-project(QuEST_Project)
+project(QuEST_Project CXX C)
 
 # -----------------------------------------------------------------------------
 # ----- USER OPTIONS ----------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-set(USER_SOURCE  "testCircuit1.c"  CACHE STRING "Source to build with QuEST library")
+set(USER_SOURCE  "testCircuit1BLAS.cpp"  CACHE STRING "Source to build with QuEST library")
 set(OUTPUT_EXE   "demo"  CACHE STRING "Executable to compile to")
 
 option(TESTING "Enable test suite functionality -- requires test suite available" ON)
@@ -30,6 +30,7 @@ add_subdirectory(TN)
 
 # Create user executable
 add_executable(${OUTPUT_EXE} ${USER_SOURCE})
+
 
 # Link libraries to user executable, including QuEST library
 target_link_libraries(${OUTPUT_EXE} TN m)

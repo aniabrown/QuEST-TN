@@ -28,6 +28,9 @@
 
 **/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct QCoord {
     // The tensor that this qubit is located in
@@ -130,6 +133,12 @@ void contractTensorNetwork(TensorNetwork tn, QuESTEnv env);
 */ 
 void contractTensors(TensorNetwork tn, int tensor1, int tensor2, QuESTEnv env);
 
+void contractIndices(TensorNetwork tn, int tensor1Index, int tensor2Index,
+        int *tensor1Contractions, int *tensor2Contractions, int numContractions,
+        int *tensor1FreeIndices, int numTensor1FreeIndices,
+        int *tensor2FreeIndices, int numTensor2FreeIndices,
+        QuESTEnv env);
+
 
 // ----- GATES -----------------------------------------------------------
 
@@ -221,6 +230,9 @@ void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u);
 void printTensorNetwork(TensorNetwork tn);
 
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // QUEST_TN
 
