@@ -97,6 +97,7 @@ typedef struct TensorNetwork {
 TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor,
         QuESTEnv env);
 
+Tensor createTensor(int numPq, int numVq, QuESTEnv env);
 
 // ----- TENSOR NETWORK CLEANUP -------------------------------------------------------
 
@@ -133,7 +134,7 @@ void contractTensorNetwork(TensorNetwork tn, QuESTEnv env);
 */ 
 void contractTensors(TensorNetwork tn, int tensor1, int tensor2, QuESTEnv env);
 
-void contractIndices(TensorNetwork tn, int tensor1Index, int tensor2Index,
+Tensor contractIndices(Tensor tensor1, Tensor tensor2,
         int *tensor1Contractions, int *tensor2Contractions, int numContractions,
         int *tensor1FreeIndices, int numTensor1FreeIndices,
         int *tensor2FreeIndices, int numTensor2FreeIndices,

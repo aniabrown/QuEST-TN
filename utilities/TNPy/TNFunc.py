@@ -9,6 +9,10 @@ contractTensorNetwork = TNTestee ("contractTensorNetwork", retType=None, argType
 
 contractTensors = TNTestee ("contractTensors", retType=None, argType=[TensorNetwork, c_int, c_int, QuESTEnv])
 
+contractIndices = TNTestee ("contractIndices", retType=Tensor, argType=[Tensor, Tensor, POINTER(c_int), POINTER(c_int), c_int, \
+        POINTER(c_int), c_int, POINTER(c_int), c_int),
+        QuESTEnv])
+
 tn_controlledNot = TNTestee ("tn_controlledNot", retType=None, argType=[TensorNetwork, c_int, c_int])
 
 tn_unitary = TNTestee ("tn_unitary", retType=None, argType=[TensorNetwork, c_int, ComplexMatrix2])
