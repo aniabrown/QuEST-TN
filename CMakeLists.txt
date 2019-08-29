@@ -8,7 +8,7 @@ project(QuEST_Project CXX C)
 # ----- USER OPTIONS ----------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-set(USER_SOURCE  "testCircuit1BLAS.cpp"  CACHE STRING "Source to build with QuEST library")
+set(USER_SOURCE  "testCircuit1.c"  CACHE STRING "Source to build with QuEST library")
 set(OUTPUT_EXE   "demo"  CACHE STRING "Executable to compile to")
 
 option(TESTING "Enable test suite functionality -- requires test suite available" ON)
@@ -51,19 +51,21 @@ add_custom_target( QuESTPy DEPENDS QuEST)
 # -----------------------------------------------------------------------------
 
 if (${TESTING})
-  set(Python_ADDITIONAL_VERSIONS 3.4;3.5;3.6;3.7;3.8)
-  find_package(PythonInterp)
-  if ((NOT PYTHONINTERP_FOUND) OR (PYTHON_VERSION_MAJOR LESS 3)  OR (PYTHON_VERSION_MINOR LESS 4))
-    set(TESTING OFF CACHE BOOL  "Enable test suite functionality -- requires test suite available" FORCE)
-    message(WARNING "Usable Python 3.4+ not found on system -- Disabling testing")
-  endif()
-endif()
-
-message(STATUS "Testing is ${TESTING}")
-
-if (${TESTING})
-  enable_testing()
-  add_subdirectory(${QuEST_UTIL_DIR})
+    #  set(Python_ADDITIONAL_VERSIONS 3.4;3.5;3.6;3.7;3.8)
+    #  find_package(PythonInterp)
+    #  if ((NOT PYTHONINTERP_FOUND) OR (PYTHON_VERSION_MAJOR LESS 3)  OR (PYTHON_VERSION_MINOR LESS 4))
+    #    set(TESTING OFF CACHE BOOL  "Enable test suite functionality -- requires test suite available" FORCE)
+    #    message(WARNING "Usable Python 3.4+ not found on system -- Disabling testing")
+    #  endif()
+    #endif()
+    #
+    #message(STATUS "Testing is ${TESTING}")
+    #
+    #if (${TESTING})
+    #  enable_testing()
+    #  add_subdirectory(${QuEST_UTIL_DIR})
+      enable_testing()
+      add_subdirectory(TNTests)
 endif()
 
 # -----------------------------------------------------------------------------
