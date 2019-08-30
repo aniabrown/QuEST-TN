@@ -2,9 +2,8 @@
 from QuESTPy.QuESTFunc import *
 from TNPy.TNFunc import *
 
-def TN_singleQubitGate(gate, tn, *args):
-    pq = getLocalPq(tn, args[0]) 
-    gate(tn.tensors[pq.tensorIndex].qureg, pq.qIndex, *args[1:]);
+def TN_singleQubitGate(gate, tensor, *args):
+    gate(tensor.qureg, *args)
 
 def TN_controlledGateLocal(gate, tensor, *args):
     controlQubit = args[0]
@@ -16,17 +15,21 @@ def TN_controlledGateTargetHalf(gate, tensor, *args):
     controlQubit = args[0]
     targetQubit = args[1]
 
-    initVirtualControl(tensor, controlQubit)
-    gate(targetTensor.qureg, targetQubit, virtualControlIndex + targetTensor.numPq)
+    numPq=1
 
-    updateTNForControlGate(tn, controlQubit, targetQubit)
+    initVirtualControl(tensor, controlQubit-numPq)
+    gate(tensor.qureg, controlQubit, targetQubit)
+
+    print("END TARGET HALF")
 
 def TN_controlledGateControlHalf(gate, tensor, *args):
     controlQubit = args[0]
     targetQubit = args[1]
     
-    initVirtualTarget(tensor, targetQubit)
-    gate(controlTensor.qureg, controlQubit, virtualTargetIndex + controlTensor.numPq)
+    numPq=1
+    
+    initVirtualTarget(tensor, targetQubit-numPq)
+    gate(controlTensor.qureg, controlQubit, targetQubit)
 
 
 def TN_controlledGate(gate, tn, *args):
