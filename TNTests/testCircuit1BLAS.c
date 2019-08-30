@@ -13,7 +13,7 @@ int main (int narg, char *varg[]) {
     QuESTEnv env = createQuESTEnv();
 
     printf("-----------------------------------------------------------------\n");
-    printf("Running QuEST test circuit 1:\n\t Basic circuit involving a system of 2 qubits in plain\n\t QuEST Qureg and tensor network representation.\n");
+    printf("Running QuEST test circuit 1:\n\t Basic circuit involving a system of 2 qubits in plain\n\t QuEST Qureg and tensor network representation. CNOT(0,1)\n");
     printf("-----------------------------------------------------------------\n");
 
     /*

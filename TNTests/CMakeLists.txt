@@ -4,6 +4,7 @@ set(test_names
     testCircuit1
     testCircuit1BLAS
     testCircuit2
+    testCircuit3
     )
 
 foreach(test_name ${test_names})

@@ -13,7 +13,7 @@ int main (int narg, char *varg[]) {
     QuESTEnv env = createQuESTEnv();
 
     printf("-----------------------------------------------------------------\n");
-    printf("Running QuEST test circuit 2:\n\t Basic circuit involving a system of 3 qubits in plain\n\t QuEST Qureg and tensor network representation.\n");
+    printf("Running QuEST test circuit 2:\n\t Basic circuit involving a system of 3 qubits in plain\n\t QuEST Qureg and tensor network representation: CNOT(0,2), CNOT(0,1).\n");
     printf("-----------------------------------------------------------------\n");
 
     /*
@@ -40,7 +40,7 @@ int main (int narg, char *varg[]) {
     reportStateToScreen(qubits, env, 0);
 
     // Apply entangling operation
-    printf("Apply controlledNot(0,2), controlledNot(0,1), controlledNot(0,2):\n");
+    printf("Apply controlledNot(0,2), controlledNot(0,1):\n");
     controlledNot(qubits, 0, 2);
     controlledNot(qubits, 0, 1);
     reportStateToScreen(qubits, env, 0);
@@ -98,7 +98,7 @@ int main (int narg, char *varg[]) {
     reportStateToScreen(tn.tensors[2].qureg, env, 0);
 
     // Apply entangling operation
-    printf("\n\nApply controlledNot(0,2), controlledNot(0,1), controlledNot(0,2):\n");
+    printf("\n\nApply controlledNot(0,2), controlledNot(0,1):\n");
     tn_controlledNot(tn, 0, 2);
     tn_controlledNot(tn, 0, 1);
     printTensorNetwork(tn);
