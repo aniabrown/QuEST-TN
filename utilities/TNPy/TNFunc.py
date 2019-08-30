@@ -10,7 +10,7 @@ contractTensorNetwork = TNTestee ("contractTensorNetwork", retType=None, argType
 contractTensors = TNTestee ("contractTensors", retType=None, argType=[TensorNetwork, c_int, c_int, QuESTEnv])
 
 contractIndices = TNTestee ("contractIndices", retType=Tensor, argType=[Tensor, Tensor, POINTER(c_int), POINTER(c_int), c_int, \
-        POINTER(c_int), c_int, POINTER(c_int), c_int),
+        POINTER(c_int), c_int, POINTER(c_int), c_int,
         QuESTEnv])
 
 tn_controlledNot = TNTestee ("tn_controlledNot", retType=None, argType=[TensorNetwork, c_int, c_int])
@@ -35,3 +35,5 @@ initVirtualControl = TNTestee("initVirtualControl", retType=None, argType=[Tenso
 updateTNForControlGate = TNTestee("updateTNForControlGate", retType=None, argType=[TensorNetwork, c_int, c_int])
 
 getControlGateIsLocal = TNTestee("getControlGateIsLocal", retType=c_int, argType=[TensorNetwork, c_int, c_int])
+
+createTensor = TNTestee("createTensor", retType=Tensor, argType=[c_int, c_int, QuESTEnv])

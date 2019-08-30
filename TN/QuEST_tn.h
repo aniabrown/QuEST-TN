@@ -220,6 +220,14 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
  */
 void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u);
 
+void initVirtualTarget(Tensor tensor, int virtualTargetIndex);
+
+void initVirtualControl(Tensor tensor, int virtualControlIndex);
+
+void updateTNForControlGate(TensorNetwork tn, const int controlQubit, const int targetQubit);
+
+int getControlGateIsLocal(TensorNetwork tn, const int controlQubit, const int targetQubit);
+
 
 // ----- reporting ------------------------------------------------------------
 
@@ -229,6 +237,14 @@ void tn_unitary(TensorNetwork tn, const int targetQubit, ComplexMatrix2 u);
  * @param[in] tn the tensor network to print
  */
 void printTensorNetwork(TensorNetwork tn);
+
+// ---- utility ---------------------------------------------------------------
+
+QCoord getLocalPq(TensorNetwork tn, int globalPq);
+
+Tensor getTensor(TensorNetwork tn, int globalPq);
+
+int incrementVqIndex(TensorNetwork tn, int globalPq);
 
 
 #ifdef __cplusplus

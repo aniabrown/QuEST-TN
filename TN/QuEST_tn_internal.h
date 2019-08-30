@@ -42,14 +42,6 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
 
 // ----- GATES -----------------------------------------------------------
 
-void initVirtualTarget(Tensor tensor, int virtualTargetIndex);
-
-void initVirtualControl(Tensor tensor, int virtualControlIndex);
-
-void updateTNForControlGate(TensorNetwork tn, const int controlQubit, const int targetQubit);
-
-int incrementVqIndex(TensorNetwork tn, int globalPq);
-
 // ----- VQ GRAPH UTILITY --------------------------------------------------------------
 
 void updateTensorGraphForContraction(TensorNetwork tn, int tensor1Index, int tensor2Index,
@@ -63,9 +55,6 @@ void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensor
 
 // ----- INDEXING UTILITY --------------------------------------------------------------
 
-QCoord getLocalPq(TensorNetwork tn, int globalPq);
-
-Tensor getTensor(TensorNetwork tn, int globalPq);
 
 void remapTensorIndexFromGlobalPq(TensorNetwork tn);
 

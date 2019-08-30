@@ -16,7 +16,7 @@ def TN_controlledGateTargetHalf(gate, tensor, *args):
     controlQubit = args[0]
     targetQubit = args[1]
 
-    initVirtualControl(tensorensor, controlQubit)
+    initVirtualControl(tensor, controlQubit)
     gate(targetTensor.qureg, targetQubit, virtualControlIndex + targetTensor.numPq)
 
     updateTNForControlGate(tn, controlQubit, targetQubit)
