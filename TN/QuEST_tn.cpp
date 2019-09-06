@@ -423,7 +423,7 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     M = 1 << numTensor2FreeIndices;
     N = 1 << numTensor1FreeIndices;
     K = 1 << numContractions;
-    qreal alpha[2] = {1.0, 1.0};
+    qreal alpha[2] = {1.0, 0.0};
     qreal beta[2] = {0.0, 0.0};
 
     printf("dims: %d %d %d\n", M, N, K);
