@@ -413,8 +413,6 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     printf("finished permuting\n");
 
     // reportStateToScreen(tensor2.qureg, env, 0);
-    // printTensor(tensor1StateVecPermuted, 1LL<<(numTensor1Qubits+1));
-    // printTensor(tensor2StateVecPermuted, 1LL<<(numTensor2Qubits+1));
 
     qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*2*totalNumQ);
 
@@ -428,14 +426,16 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
 
     printf("dims: %d %d %d\n", M, N, K);
 
+    printTensor(tensor1StateVecPermuted, 1LL<<(numTensor1Qubits+1));
+    printTensor(tensor2StateVecPermuted, 1LL<<(numTensor2Qubits+1));
     // tensor2 x tensor1.
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, alpha,
-		tensor2StateVecPermuted, M, tensor1StateVecPermuted, N, beta, outputQureg, M);
+    		tensor2StateVecPermuted, K, tensor1StateVecPermuted, N, beta, outputQureg, N);
 
     // Copy data back
-    for(long long int index = 0; index < contractedQureg.numAmpsPerChunk*2; index+=2) {
-      contractedQureg.stateVec.real[index] = outputQureg[index];
-      contractedQureg.stateVec.imag[index] = outputQureg[index+1];
+    for(long long int index = 0; index < contractedQureg.numAmpsPerChunk; index++) {
+      contractedQureg.stateVec.real[index] = outputQureg[2*index];
+      contractedQureg.stateVec.imag[index] = outputQureg[2*index+1];
     }
 
     free(tensor1StateVecPermuted);
