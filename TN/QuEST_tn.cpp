@@ -374,9 +374,7 @@ int swapBits(long long int b, int *perm, int nQubits) {
 qreal* permuteArray(Qureg qureg, int *perm) {
   qreal* outArr = (qreal *) malloc(sizeof(qreal)*2*qureg.numAmpsPerChunk);
   for (long long int i = 0; i < qureg.numAmpsPerChunk; i++) {
-    long long int newIndex = swapBits(i, perm, qureg.numQubitsRepresented);
-    printf("HI %d ",newIndex);
-    newIndex *= 2;
+    long long int newIndex = 2*swapBits(i, perm, qureg.numQubitsRepresented);
     outArr[newIndex] = qureg.stateVec.real[i];
     outArr[newIndex+1] = qureg.stateVec.imag[i];
   }
@@ -414,9 +412,9 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     qreal* tensor2StateVecPermuted = permuteArray(tensor2.qureg, tensor2Perm);
     printf("finished permuting\n");
 
-    reportStateToScreen(tensor2.qureg, env, 0);
-    printTensor(tensor1StateVecPermuted, 1LL<<(numTensor1Qubits+1));
-    printTensor(tensor2StateVecPermuted, 1LL<<(numTensor2Qubits+1));
+    // reportStateToScreen(tensor2.qureg, env, 0);
+    // printTensor(tensor1StateVecPermuted, 1LL<<(numTensor1Qubits+1));
+    // printTensor(tensor2StateVecPermuted, 1LL<<(numTensor2Qubits+1));
 
     qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*2*totalNumQ);
 
