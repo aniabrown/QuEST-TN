@@ -407,7 +407,7 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     //printTensor(tensor2StateVecImagPermuted, 1LL<<numTensor2Qubits);
 
     qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*2*totalNumQ);
-    
+
     Qureg contractedQureg = createQureg(totalNumQ, env);
     int M, N, K;
     M = 1 << numTensor2FreeIndices;
@@ -415,9 +415,7 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     K = 1 << numContractions;
     qreal alpha[2] = {1.0, 1.0};
     qreal beta[2] = {0.0, 0.0};
-    
 
-    
     //printf("dims: %d %d %d\n", M, N, K);
 
     // tensor2 x tensor1.
@@ -429,11 +427,11 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
       contractedQureg.stateVec.real[index] = outputQureg[index];
       contractedQureg.stateVec.imag[index] = outputQureg[index+1];
     }
-    
+
     free(tensor1StateVecPermuted);
     free(tensor2StateVecPermuted);
     free(outputQureg);
-    
+
     free(tensor1Perm);
     free(tensor2Perm);
 
