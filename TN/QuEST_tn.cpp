@@ -4,7 +4,6 @@
 #include "QuEST_debug.h"
 #include "QuEST_tn_internal.h"
 #include "QuEST_tn.h"
-#include <hptt.h>
 #include <cblas.h>
 
 #define DEBUG 0
@@ -31,7 +30,7 @@ void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
 }
 
 /** Get the number of indices that will be contracted over when the two input
- * tensors are contracted. 
+ * tensors are contracted.
  * These correspond to all the virtual qubit indices that represent entanglement
  * between the two tensors.
  *
@@ -46,7 +45,7 @@ int getNumContractions(TensorNetwork tn, int tensor1Index, int tensor2Index){
     VqVertex *tensor1Vertex, *entangledPair;
     tensor1Vertex = tn.tensorHeadVqVertex[tensor1Index];
     while (tensor1Vertex != NULL){
-        entangledPair = tensor1Vertex->entangledPair;  
+        entangledPair = tensor1Vertex->entangledPair;
         if (entangledPair->tensorIndex == tensor2Index) numContractions++;
         tensor1Vertex = tensor1Vertex->nextInTensor;
     }
@@ -82,7 +81,7 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     // malloc space for array of virtual qubits to contract
     *tensor1Contractions = (int*) malloc(numContractions*sizeof(int));
     *tensor2Contractions = (int*) malloc(numContractions*sizeof(int));
-    
+
     // malloc space for array of virtual qubits on each tensor that will not be contracted
     *numTensor1UncontractedVqs = tn.numEntanglements[tensor1Index] - numContractions;
     *numTensor2UncontractedVqs = tn.numEntanglements[tensor2Index] - numContractions;
@@ -99,7 +98,7 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     VqVertex *tensorVertex, *entangledPair;
     tensorVertex = tn.tensorHeadVqVertex[tensor1Index];
     while (tensorVertex != NULL){
-        entangledPair = tensorVertex->entangledPair;  
+        entangledPair = tensorVertex->entangledPair;
         if (entangledPair->tensorIndex == tensor2Index) {
             (*tensor1Contractions)[contractionCount]=vertexCount++;
             // add indices to contract in second tensor in same order as for first tensor
@@ -115,7 +114,7 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
     vertexCount=0;
     tensorVertex = tn.tensorHeadVqVertex[tensor2Index];
     while (tensorVertex != NULL){
-        entangledPair = tensorVertex->entangledPair;  
+        entangledPair = tensorVertex->entangledPair;
         if (!(entangledPair->tensorIndex == tensor1Index)) {
             (*tensor2UncontractedVqs)[uncontractedCount++]=vertexCount;
         }
@@ -126,23 +125,23 @@ void getContractionVqIndices(TensorNetwork tn, int tensor1Index, int tensor2Inde
 
 /** Get the index in the output state vector where an element resulting from a contraction between two
  * tensors should be placed.
- * 
- * @param[in] tensor1FreeIndexEl the index of the element in a state vector made up of only the free indices in tensor1 
- * @param[in] tensor2FreeIndexEl the index of the element in a state vector made up of only the free indices in tensor2 
- * @param[in] tensor1PqSize the number of probability amplitudes in a system containing just the physical qubits in tensor1 
- * @param[in] tensor2PqSize the number of probability amplitudes in a system containing just the physical qubits in tensor2 
+ *
+ * @param[in] tensor1FreeIndexEl the index of the element in a state vector made up of only the free indices in tensor1
+ * @param[in] tensor2FreeIndexEl the index of the element in a state vector made up of only the free indices in tensor2
+ * @param[in] tensor1PqSize the number of probability amplitudes in a system containing just the physical qubits in tensor1
+ * @param[in] tensor2PqSize the number of probability amplitudes in a system containing just the physical qubits in tensor2
  * @param[in] numTensor1Pq the number of physical qubits in tensor1
  * @param[in] numTensor2Pq the number of physical qubits in tensor2
  * @param[in] numTensor1UncontractedVqs the number of virtual qubits which will not be contracted in this operation
- * 	in tensor1 
+ * 	in tensor1
  * @param[in] numTensor1UncontractedVqs the number of virtual qubits which will not be contracted in this operation
- * 	in tensor2 
- * @returns the index of the element in the output state vector 
+ * 	in tensor2
+ * @returns the index of the element in the output state vector
  */
 long long int getContractedIndex(long long int tensor1FreeIndexEl, long long int tensor2FreeIndexEl,
      long long int tensor1PqSize, long long int tensor2PqSize, int numTensor1Pq, int numTensor2Pq,
      int numTensor1UncontractedVqs, int numTensor2UncontractedVqs){
-            
+
     long long int contractedIndex;
     long long int stateVec1IndexInPq, stateVec2IndexInPq;
 
@@ -172,7 +171,7 @@ long long int getContractedIndex(long long int tensor1FreeIndexEl, long long int
             freeIndexInBlock -= sizeFreeHalfBlock;
         }
     }
-    
+
     freeIndexInBlock = tensor2FreeIndexEl;
     for (int i=numTensor2UncontractedVqs-1; i>=0; i--){
         // the size of a block of elements in the state vector for an uncontracted virtual qubit
@@ -189,10 +188,10 @@ long long int getContractedIndex(long long int tensor1FreeIndexEl, long long int
     return contractedIndex;
 }
 
-/** Get the corresponding index in the full state vector for a tensor, given an element in a state vector made up of 
- * only the free indices in that tensor. The index in the full state vector will have all physical qubits and 
- * uncontracted virtual qubits with the same value as the input element. 
- * 
+/** Get the corresponding index in the full state vector for a tensor, given an element in a state vector made up of
+ * only the free indices in that tensor. The index in the full state vector will have all physical qubits and
+ * uncontracted virtual qubits with the same value as the input element.
+ *
  * @param[in] freeIndexEl the index of the element in a state vector made up of only the free indices in a tensor
  * @param[in] numPq the number of physical qubits in that tensor
  * @param[in] uncontractedVqs a list of vq indices that will not be contracted
@@ -205,7 +204,7 @@ long long int getStateVectorIndexFromFreeIndexEl(long long int freeIndexEl,
     long long int sizeHalfBlock, sizeFreeHalfBlock;
     int freeIsLower;
     long long int pqSize = 1LL << numPq;
-    long long int indexInPhysicalQubitBlock = freeIndexEl&(pqSize-1); 
+    long long int indexInPhysicalQubitBlock = freeIndexEl&(pqSize-1);
     long long int stateVectorIndex = indexInPhysicalQubitBlock;
     long long int freeIndexInBlock = freeIndexEl;
     for (int i=numUncontractedVqs-1; i>=0; i--){
@@ -222,22 +221,22 @@ long long int getStateVectorIndexFromFreeIndexEl(long long int freeIndexEl,
     return stateVectorIndex;
 }
 
-/** For a particular element in tensor1 and a particular element in tensor2, recursively contract across all virtual qubits 
+/** For a particular element in tensor1 and a particular element in tensor2, recursively contract across all virtual qubits
  * that represent entanglements between the two tensors. The elements in each tensor will always represent probability
  * amplitudes where all virtual qubits to contract are equal to zero.
- * 
- * @param[in] tensor1 the first tensor to contract. 
+ *
+ * @param[in] tensor1 the first tensor to contract.
  * @param[in] tensor2 the second tensor to contract.
  * @param[in] tensor1Offset an element in the tensor1 state vector where all qubits to contract are equal to zero
  * @param[in] tensor2Offset an element in the tensor2 state vector where all qubits to contract are equal to zero
  * @param[in] tensor1Contractions a list of virtual qubit indices to contract with the tensor2 indices
- * @param[in] tensor2Contractions a list of virtual qubit indices to contract with the tensor1 indices 
+ * @param[in] tensor2Contractions a list of virtual qubit indices to contract with the tensor1 indices
  * @param[in] numContractions the number of indices to contract
- * @param[in] the current index in the tensor1Contractions/tensor2Contractions list 
+ * @param[in] the current index in the tensor1Contractions/tensor2Contractions list
  * @returns one element in the output tensor after contraction
  */
-Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset, 
-        long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions, 
+Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1Offset,
+        long long int tensor2Offset, int *tensor1Contractions, int *tensor2Contractions,
         int numContractions, int vqIndex){
 
     DEBUG_PRINT(("recursive step. vqIndex: %d t1vqToContract %d\n", vqIndex, tensor1Contractions[vqIndex]));
@@ -247,7 +246,7 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
     DEBUG_PRINT(("tensor1Offset %lld tensor2Offset %lld\n", tensor1Offset, tensor2Offset));
     DEBUG_PRINT(("tensor1OffsetNew %lld tensor2OffsetNew %lld\n", tensor1OffsetNew, tensor2OffsetNew));
     DEBUG_PRINT(("num pq %d contraction index %d\n", tensor1.numPq, tensor1Contractions[vqIndex]));
-   
+
     if (vqIndex==numContractions-1){
         Qureg qureg1 = tensor1.qureg;
         Qureg qureg2 = tensor2.qureg;
@@ -260,41 +259,41 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
         qreal sumReal=0;
         qreal sumImag=0;
 
-        // vqIndex == 0 
+        // vqIndex == 0
         // Real component
-        sumReal += stateVec1Real[tensor1Offset] * 
+        sumReal += stateVec1Real[tensor1Offset] *
             stateVec2Real[tensor2Offset];
-        sumReal += -stateVec1Imag[tensor1Offset] * 
+        sumReal += -stateVec1Imag[tensor1Offset] *
             stateVec2Imag[tensor2Offset];
 
         // Imag component
-        sumImag += stateVec1Imag[tensor1Offset] * 
+        sumImag += stateVec1Imag[tensor1Offset] *
             stateVec2Real[tensor2Offset];
-        sumImag += stateVec1Real[tensor1Offset] * 
+        sumImag += stateVec1Real[tensor1Offset] *
             stateVec2Imag[tensor2Offset];
 
-        // vqIndex == 1 
+        // vqIndex == 1
         // Real component
-        sumReal += stateVec1Real[tensor1OffsetNew] * 
+        sumReal += stateVec1Real[tensor1OffsetNew] *
             stateVec2Real[tensor2OffsetNew];
-        sumReal += -stateVec1Imag[tensor1OffsetNew] * 
+        sumReal += -stateVec1Imag[tensor1OffsetNew] *
             stateVec2Imag[tensor2OffsetNew];
 
         // Imag component
-        sumImag += stateVec1Imag[tensor1OffsetNew] * 
+        sumImag += stateVec1Imag[tensor1OffsetNew] *
             stateVec2Real[tensor2OffsetNew];
-        sumImag += stateVec1Real[tensor1OffsetNew] * 
+        sumImag += stateVec1Real[tensor1OffsetNew] *
             stateVec2Imag[tensor2OffsetNew];
 
-       
+
         Complex sum;
         sum.real = sumReal; sum.imag = sumImag;
         return sum;
     } else {
         Complex sumPart1, sumPart2, sum;
-            sumPart1 = recursiveContract(tensor1, tensor2, tensor1Offset, tensor2Offset, 
+            sumPart1 = recursiveContract(tensor1, tensor2, tensor1Offset, tensor2Offset,
                 tensor1Contractions, tensor2Contractions, numContractions, vqIndex+1);
-            sumPart2 = recursiveContract(tensor1, tensor2, tensor1OffsetNew, tensor2OffsetNew, 
+            sumPart2 = recursiveContract(tensor1, tensor2, tensor1OffsetNew, tensor2OffsetNew,
                 tensor1Contractions, tensor2Contractions, numContractions, vqIndex+1);
         sum.real = sumPart1.real + sumPart2.real;
         sum.imag = sumPart1.imag + sumPart2.imag;
@@ -304,7 +303,7 @@ Complex recursiveContract(Tensor tensor1, Tensor tensor2, long long int tensor1O
 
 int* getTensorIndexPermutation(int* contractionIndices, int numContractions,
         int* freeIndices, int numFreeIndices, int tensor){
-    
+
     int *perm = (int*) malloc((numContractions+numFreeIndices)*sizeof(int));
 
     int firstSize, secondSize;
@@ -338,7 +337,7 @@ int* getTensorSizes(int numQubits){
     for (int i=0; i<numQubits; i++) sizes[i]=2;
     return sizes;
 }
-    
+
 
 Tensor createTensor(int numPq, int numVq, QuESTEnv env){
     Tensor tensor;
@@ -349,19 +348,40 @@ Tensor createTensor(int numPq, int numVq, QuESTEnv env){
     tensor.qureg = createQureg(tensor.numPq + tensor.numVq, env);
     //! might need to store next available vq
 
-    return tensor; 
+    return tensor;
 }
 
 /*
- * Expects tensor1Contractions to be in order from smallest to largest. 
- * Expects tensor2Contractions to be ordered to match indices in tensor1. 
+ * Swap corresponding qubit IDs in perm and return new index
+ */
+int swapBits(long long int b, int *perm, int nQubits) {
+  long long int out = 0;
+  for(int j=0;j<nQubits; j++) {
+    out += (b >> j & 1) * (1 << perm[j]);
+  }
+  return out;
+}
+
+qreal* permuteArray(Qureg qureg, int *perm) {
+  qreal* outArr = (qreal *) malloc(sizeof(qreal)*2*qureg.numAmpsPerChunk);
+  for (long long int i = 0; i < qureg.numAmpsPerChunk*2; i+=2) {
+    long long int newIndex = swapBits(i, perm, qureg.numQubitsRepresented);
+    outArr[newIndex] = qureg.stateVec.real[i];
+    outArr[newIndex+1] = qureg.stateVec.imag[i];
+  }
+  return outArr;
+}
+
+/*
+ * Expects tensor1Contractions to be in order from smallest to largest.
+ * Expects tensor2Contractions to be ordered to match indices in tensor1.
  * Ie if tensor1 and tensor2 each have 3 indices and (tensor1, index 1) is
- * contracted with (tensor2, index 2) and (tensor1, index 2) is contracted with 
+ * contracted with (tensor2, index 2) and (tensor1, index 2) is contracted with
  * (tensor2, index 0), use:
  * tensor1Contractions = [1, 2]
- * tensor2Contractions = [2, 0] 
+ * tensor2Contractions = [2, 0]
  */
-Tensor contractIndices(Tensor tensor1, Tensor tensor2, 
+Tensor contractIndices(Tensor tensor1, Tensor tensor2,
         int *tensor1Contractions, int *tensor2Contractions, int numContractions,
         int *tensor1FreeIndices, int numTensor1FreeIndices,
         int *tensor2FreeIndices, int numTensor2FreeIndices,
@@ -369,84 +389,54 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
 
     printf("Contract with BLAS\n");
 
-
     int numTensor1Qubits, numTensor2Qubits;
     numTensor1Qubits = tensor1.qureg.numQubitsRepresented;
     numTensor2Qubits = tensor2.qureg.numQubitsRepresented;
     int totalNumQ = numTensor1FreeIndices + numTensor2FreeIndices;
 
-    long long int stateVec1Size, stateVec2Size;
-    stateVec1Size = 1LL << numTensor1Qubits;
-    stateVec2Size = 1LL << numTensor2Qubits;
-
     int *tensor1Perm = getTensorIndexPermutation(tensor1Contractions, numContractions,
-            tensor1FreeIndices, numTensor1FreeIndices, 1); 
+						 tensor1FreeIndices, numTensor1FreeIndices, 1);
     int *tensor2Perm = getTensorIndexPermutation(tensor2Contractions, numContractions,
-            tensor2FreeIndices, numTensor2FreeIndices, 2); 
-    int *tensor1Sizes = getTensorSizes(numTensor1Qubits);
-    int *tensor2Sizes = getTensorSizes(numTensor2Qubits);
+						 tensor2FreeIndices, numTensor2FreeIndices, 2);
 
-    qreal *tensor1StateVecRealPermuted = (qreal*) malloc(stateVec1Size*sizeof(qreal));
-    qreal *tensor2StateVecRealPermuted = (qreal*) malloc(stateVec2Size*sizeof(qreal));
-    qreal *tensor1StateVecImagPermuted = (qreal*) malloc(stateVec1Size*sizeof(qreal));
-    qreal *tensor2StateVecImagPermuted = (qreal*) malloc(stateVec2Size*sizeof(qreal));
-
-
-    auto tensor1RealPlan = hptt::create_plan(tensor1Perm, numTensor1Qubits,
-            1, tensor1.qureg.stateVec.real, tensor1Sizes, NULL,
-            0, tensor1StateVecRealPermuted, NULL,
-            hptt::ESTIMATE, 1);
-    tensor1RealPlan->execute();
-    auto tensor1ImagPlan = hptt::create_plan(tensor1Perm, numTensor1Qubits,
-            1, tensor1.qureg.stateVec.imag, tensor1Sizes, NULL,
-            0, tensor1StateVecImagPermuted, NULL,
-            hptt::ESTIMATE, 1);
-    tensor1ImagPlan->execute();
-    auto tensor2RealPlan = hptt::create_plan(tensor2Perm, numTensor2Qubits,
-            1, tensor2.qureg.stateVec.real, tensor2Sizes, NULL,
-            0, tensor2StateVecRealPermuted, NULL,
-            hptt::ESTIMATE, 1);
-    tensor2RealPlan->execute();
-    auto tensor2ImagPlan = hptt::create_plan(tensor2Perm, numTensor2Qubits,
-            1, tensor2.qureg.stateVec.imag, tensor2Sizes, NULL,
-            0, tensor2StateVecImagPermuted, NULL,
-            hptt::ESTIMATE, 1);
-    tensor2ImagPlan->execute();
+    qreal* tensor1StateVecPermuted = permuteArray(tensor1.qureg, tensor1Perm);
+    qreal* tensor2StateVecPermuted = permuteArray(tensor2.qureg, tensor2Perm);
 
     //reportStateToScreen(tensor2.qureg, env, 0);
     //printTensor(tensor1StateVecImagPermuted, 1LL<<numTensor1Qubits);
     //printTensor(tensor2StateVecImagPermuted, 1LL<<numTensor2Qubits);
 
+    qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*2*totalNumQ);
+    
     Qureg contractedQureg = createQureg(totalNumQ, env);
     int M, N, K;
     M = 1 << numTensor2FreeIndices;
     N = 1 << numTensor1FreeIndices;
     K = 1 << numContractions;
+    qreal alpha[2] = {1.0, 1.0};
+    qreal beta[2] = {0.0, 0.0};
+    
 
+    
     //printf("dims: %d %d %d\n", M, N, K);
 
-    // tensor2 x tensor1. 
-    //! This could be done more efficiently if qureg.stateVec could be cast to a complex type. Then could use one ZGEMM
-    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1, 
-            tensor2StateVecRealPermuted, M, tensor1StateVecRealPermuted, N, 0, contractedQureg.stateVec.real, M);
-    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, -1, 
-            tensor2StateVecImagPermuted, M, tensor1StateVecImagPermuted, N, 1, contractedQureg.stateVec.real, M);
-    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1, 
-            tensor2StateVecRealPermuted, M, tensor1StateVecImagPermuted, N, 0, contractedQureg.stateVec.imag, M);
-    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1, 
-            tensor2StateVecImagPermuted, M, tensor1StateVecRealPermuted, N, 1, contractedQureg.stateVec.imag, M);
+    // tensor2 x tensor1.
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, alpha,
+		tensor2StateVecPermuted, M, tensor1StateVecPermuted, N, beta, outputQureg, M);
 
-    free(tensor1StateVecRealPermuted);
-    free(tensor1StateVecImagPermuted);
-    free(tensor2StateVecRealPermuted);
-    free(tensor2StateVecImagPermuted);
-
+    // Copy data back
+    for(long long int index = 0; index < contractedQureg.numAmpsPerChunk*2; index+=2) {
+      contractedQureg.stateVec.real[index] = outputQureg[index];
+      contractedQureg.stateVec.imag[index] = outputQureg[index+1];
+    }
+    
+    free(tensor1StateVecPermuted);
+    free(tensor2StateVecPermuted);
+    free(outputQureg);
+    
     free(tensor1Perm);
     free(tensor2Perm);
-    free(tensor1Sizes);
-    free(tensor2Sizes);
 
-       
     // Free old quregs
     destroyQureg(tensor1.qureg, env);
     destroyQureg(tensor2.qureg, env);
@@ -472,17 +462,17 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     }
 
     Tensor tensor1 = tn.tensors[tensor1Index];
-    Tensor tensor2 = tn.tensors[tensor2Index]; 
+    Tensor tensor2 = tn.tensors[tensor2Index];
     Tensor outputTensor;
 
     int numContractions = getNumContractions(tn, tensor1Index, tensor2Index);
     DEBUG_PRINT(("numContractions: %d\n", numContractions));
 
-    int *tensor1Contractions, *tensor2Contractions; 
-    int *tensor1UncontractedVqs, *tensor2UncontractedVqs; 
+    int *tensor1Contractions, *tensor2Contractions;
+    int *tensor1UncontractedVqs, *tensor2UncontractedVqs;
     int numTensor1UncontractedVqs=0, numTensor2UncontractedVqs=0;
 
-    getContractionVqIndices(tn, tensor1Index, tensor2Index, numContractions, 
+    getContractionVqIndices(tn, tensor1Index, tensor2Index, numContractions,
             &tensor1Contractions, &tensor2Contractions,
             &numTensor1UncontractedVqs, &numTensor2UncontractedVqs,
             &tensor1UncontractedVqs, &tensor2UncontractedVqs);
@@ -538,10 +528,10 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
 
             Complex sum;
 
-            sum = recursiveContract(tensor1, tensor2, stateVec1Index, stateVec2Index, 
+            sum = recursiveContract(tensor1, tensor2, stateVec1Index, stateVec2Index,
                 tensor1Contractions, tensor2Contractions, numContractions, 0);
 
-            contractedIndex = getContractedIndex(tensor1FreeIndexEl, tensor2FreeIndexEl, 
+            contractedIndex = getContractedIndex(tensor1FreeIndexEl, tensor2FreeIndexEl,
                     tensor1PqSize, tensor2PqSize, tensor1.numPq, tensor2.numPq,
                     numTensor1UncontractedVqs, numTensor2UncontractedVqs);
             DEBUG_PRINT(("OUTPUT: %lld VALUE: %f\n", contractedIndex, sum.real));
@@ -553,9 +543,9 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     updateTensorGraphForContraction(tn, tensor1Index, tensor2Index, tensor1UncontractedVqs, numTensor1UncontractedVqs,
             tensor2UncontractedVqs, numTensor2UncontractedVqs);
 
-       
-    // Update first tensor 
-    // The output of the contraction is stored in the location of the first tensor 
+
+    // Update first tensor
+    // The output of the contraction is stored in the location of the first tensor
     // in the tensor array.
     destroyQureg(tensor1.qureg, env);
     outputTensor.qureg = contractedQureg;
@@ -564,7 +554,7 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     outputTensor.nextVqIndex = totalNumVq;
     tn.numEntanglements[tensor1Index] = totalNumVq;
     tn.tensors[tensor1Index] = outputTensor;
-    
+
     // Update second tensor
     // The order of tensors in the tensor array is not changed when two tensors are contracted
     // -- for now, just leave a gap where the second tensor was by setting numPq to 0.
@@ -576,10 +566,10 @@ void contractTensors(TensorNetwork tn, int tensor1Index, int tensor2Index, QuEST
     // Update tn mapping between global qubit indices and (tensor, local qubit index)
     remapTensorIndexFromGlobalPq(tn);
     remapFirstGlobalPqIndex(tn);
-    
+
 }
- 
-TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor, 
+
+TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numVqPerTensor,
         QuESTEnv env){
 
     TensorNetwork tn;
@@ -643,7 +633,7 @@ TensorNetwork createTensorNetwork(int numTensors, int *numPqPerTensor, int *numV
 
 /** Updates tensorIndexFromGlobalPq to be consistent with changes made to numPq on a tensor
  * @param[in,out] tn The tensor network object to update
- */ 
+ */
 void remapTensorIndexFromGlobalPq(TensorNetwork tn){
     int currentPq = 0;
     for (int i=0; i<tn.numTensors; i++){
@@ -657,7 +647,7 @@ void remapTensorIndexFromGlobalPq(TensorNetwork tn){
 
 /** Updates firstGlobalPqIndex to be consistent with changes made to numPq on a tensor
  * @param[in,out] tn The tensor network object to update
- */ 
+ */
 void remapFirstGlobalPqIndex(TensorNetwork tn){
     int globalPqOffset = 0;
     for (int i=0; i<tn.numTensors; i++){
@@ -667,11 +657,11 @@ void remapFirstGlobalPqIndex(TensorNetwork tn){
     }
 }
 
-void updateTensorGraphForContraction(TensorNetwork tn, int tensor1Index, int tensor2Index, 
+void updateTensorGraphForContraction(TensorNetwork tn, int tensor1Index, int tensor2Index,
         int *tensor1UncontractedVqs, int numTensor1UncontractedVqs,
         int *tensor2UncontractedVqs, int numTensor2UncontractedVqs){
     // Update vqVertices in tn lists
-    
+
     // first tensor's vqVertices
     VqVertex *tail=NULL;
     int foundHead=0;
@@ -686,7 +676,7 @@ void updateTensorGraphForContraction(TensorNetwork tn, int tensor1Index, int ten
                 tensor2UncontractedVqs, numTensor2UncontractedVqs, &tail, &foundHead);
     } else {
         // there were no uncontracted indices in the first tensor
-        removeContractedVqVertices(tn, tensor2Index, tensor1Index, 
+        removeContractedVqVertices(tn, tensor2Index, tensor1Index,
                 NULL, tensor2UncontractedVqs, numTensor2UncontractedVqs, &tail, &foundHead);
     }
 
@@ -703,7 +693,7 @@ void updateTensorGraphForContraction(TensorNetwork tn, int tensor1Index, int ten
  * head of the second tensor's linked list.
  *
  * @param[in,out] TensorNetwork tn the tensor network object to update
- * @param[in] tensorIndex the tensor index of the linked list being traversed and freed. 
+ * @param[in] tensorIndex the tensor index of the linked list being traversed and freed.
  * @param[in] newTensorIndex the index of the output tensor, ie the first tensor in the contraction
  * @param[in] uncontractedVqs list of virtual qubit indices which have not been contracted out
  * @param[in] numUncontractedVqs the number of elements in the uncontractedVqs list
@@ -723,7 +713,7 @@ void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensor
     while (vqVertex != NULL){
         if (uncontractedVqCount<numUncontractedVqs) {
             if (vqVertexCount++ == uncontractedVqs[uncontractedVqCount]) {
-                // keep 
+                // keep
                 if (vqVertex->tensorIndex != newTensorIndex) vqVertex->tensorIndex = newTensorIndex;
                 if (!(*foundHead)) {
                     tn.tensorHeadVqVertex[tensorIndex] = vqVertex;
@@ -753,7 +743,7 @@ void removeContractedVqVertices(TensorNetwork tn, int tensorIndex, int newTensor
     if (prevVqVertexToKeep != NULL){
         prevVqVertexToKeep->nextInTensor=NULL;
     }
-} 
+}
 
 // ----- operations ------------------------------------------------------------
 
@@ -774,7 +764,7 @@ int getControlGateIsLocal(TensorNetwork tn, const int controlQubit, const int ta
 
 
 //! When being called from Python, this function should never be called. The more general def TN_controlledGate,
-//! based on the structure of tn_controllenNot, should be used instead 
+//! based on the structure of tn_controllenNot, should be used instead
 void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int targetQubit){
     QCoord controlPqLocal = getLocalPq(tn, controlQubit);
     QCoord targetPqLocal = getLocalPq(tn, targetQubit);
@@ -787,14 +777,14 @@ void tn_controlledNot(TensorNetwork tn, const int controlQubit, const int target
     } else {
         // qubits are in different tensor/qureg
         // do control tensor half
-        // TODO: note this won't work if doing multiple different operations on the same tensor in parallel 
+        // TODO: note this won't work if doing multiple different operations on the same tensor in parallel
         int virtualTargetIndex = incrementVqIndex(tn, controlQubit);
         initVirtualTarget(controlTensor, virtualTargetIndex);
         DEBUG_PRINT(("controlled not tensor 1: %d %d\n", controlPqLocal.qIndex, virtualTargetIndex + controlTensor->numPq));
         controlledNot(controlTensor.qureg, controlPqLocal.qIndex, virtualTargetIndex + controlTensor.numPq);
-        
+
         // do target tensor half
-        // TODO: note this won't work if doing multiple different operations on the same tensor in parallel 
+        // TODO: note this won't work if doing multiple different operations on the same tensor in parallel
         Tensor targetTensor = getTensor(tn, targetQubit);
         int virtualControlIndex = incrementVqIndex(tn, targetQubit);
         initVirtualControl(targetTensor, virtualControlIndex);
@@ -816,8 +806,8 @@ void updateTNForControlGate(TensorNetwork tn, const int controlQubit, const int 
     QCoord controlPqLocal = getLocalPq(tn, controlQubit);
     QCoord targetPqLocal = getLocalPq(tn, targetQubit);
 
-    // TODO -- change t1, t2 to control/target 
-    // update adjacency list. 
+    // TODO -- change t1, t2 to control/target
+    // update adjacency list.
     // tensor1
     VqVertex *tensor1VqVertex = (VqVertex*) malloc(sizeof(*tensor1VqVertex));
     tensor1VqVertex->nextInTensor = NULL;
@@ -865,7 +855,7 @@ void initVirtualTarget(Tensor tensor, int virtualTargetIndex){
      collapseToOutcome(tensor.qureg, vqIndex, 0);
 }
 
-/** Initialize virtual qubit to |0> + |1> 
+/** Initialize virtual qubit to |0> + |1>
  * NOTE: not (1/sqrt(2))(|0> + |1>)
  * @param[in,out] tensor the tensor object
  * @param[in] virtual qubit to initialize. Index is local to a tensor but includes all physical qubits in the tensor
@@ -905,11 +895,11 @@ void initVirtualControl(Tensor tensor, int virtualControlIndex){
 // ----- utility --------------------------------------------------------------
 
 /** Get the index of a physical qubit within a tensor from a global index which expects all
- * tensors to be ordered as in TensorNetwork.tensors 
- * 
+ * tensors to be ordered as in TensorNetwork.tensors
+ *
  * @param[in] tn the tensor network object
  * @param[in] globalPq the index of the physical qubit in the global system
- * @returns the tensor and local index within the tensor of the qubit 
+ * @returns the tensor and local index within the tensor of the qubit
  */
 QCoord getLocalPq(TensorNetwork tn, int globalPq){
     QCoord localPq;
@@ -920,7 +910,7 @@ QCoord getLocalPq(TensorNetwork tn, int globalPq){
 
 // ----- reporting ------------------------------------------------------------
 
-/** Get the index of the virtual qubit in the list of virtual qubits in that tensor from a 
+/** Get the index of the virtual qubit in the list of virtual qubits in that tensor from a
  * VqVertex object. Note that this is inefficient as it counts from the vqVertex to the end
  * of the linked list.
  *
@@ -949,14 +939,14 @@ void printTensorNetwork(TensorNetwork tn){
         } else {
             printf("Tensor %d: %d physical qubits, %d virtual qubits\n", i, tensor.numPq, tensor.numVq);
             printf("\t%d Entanglements:\n", tn.numEntanglements[i]);
-            
+
             VqVertex *vqVertex = tn.tensorHeadVqVertex[i];
             VqVertex *entangledPair;
             int vqCount=0;
             while (vqVertex != NULL){
-                entangledPair = vqVertex->entangledPair;  
+                entangledPair = vqVertex->entangledPair;
                 int entangledIndex = getVqVertexIndex(tn, entangledPair);
-                printf("\t\tVirtual qubit %d -> tensor %d, virtual qubit %d\n", 
+                printf("\t\tVirtual qubit %d -> tensor %d, virtual qubit %d\n",
                         vqCount++, entangledPair->tensorIndex, entangledIndex);
                 vqVertex = vqVertex->nextInTensor;
             }
@@ -965,20 +955,3 @@ void printTensorNetwork(TensorNetwork tn){
     printf("\n");
 //    printf("\n--------------------------------------- \n");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

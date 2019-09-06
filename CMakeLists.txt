@@ -8,7 +8,7 @@ project(QuEST_Project CXX C)
 # ----- USER OPTIONS ----------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-set(USER_SOURCE  "testCircuit1.c"  CACHE STRING "Source to build with QuEST library")
+set(USER_SOURCE  ""  CACHE STRING "Source to build with QuEST library")
 set(OUTPUT_EXE   "demo"  CACHE STRING "Executable to compile to")
 
 option(TESTING "Enable test suite functionality -- requires test suite available" ON)
@@ -24,16 +24,22 @@ set(QuEST_UTIL_DIR_NAME "utilities" CACHE STRING
 # ----- USER EXECUTABLE -------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-message(STATUS "Compiling ${USER_SOURCE} to executable ${OUTPUT_EXE}")
+if (${USER_COURCE})
+  message(STATUS "Compiling ${USER_SOURCE} to executable ${OUTPUT_EXE}")
+
+  # Create user executable
+  add_executable(${OUTPUT_EXE} ${USER_SOURCE})
+
+
+  # Link libraries to user executable, including QuEST library
+  target_link_libraries(${OUTPUT_EXE} TN m)
+else()
+  message(STATUS "Compiling QuEST as library only")
+  
+endif()
 
 add_subdirectory(TN)
 
-# Create user executable
-add_executable(${OUTPUT_EXE} ${USER_SOURCE})
-
-
-# Link libraries to user executable, including QuEST library
-target_link_libraries(${OUTPUT_EXE} TN m)
 
 # -----------------------------------------------------------------------------
 # ----- UTILS -----------------------------------------------------------------
