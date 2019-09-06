@@ -23,6 +23,15 @@ void printTensor(double *tensor, int numEls){
     printf("  ]\n");
 }
 
+void printInts(int *tensor, int numEls){
+    printf("Print Ints:\n");
+    printf("\n  [\n");
+    for (int i=0; i<numEls; i++){
+        printf("\t%d\n", tensor[i]);
+    }
+    printf("  ]\n");
+}
+
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
     for (int i=1; i<tn.numTensors; i++){
         contractTensors(tn, 0, i, env);
@@ -402,6 +411,8 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     qreal* tensor1StateVecPermuted = permuteArray(tensor1.qureg, tensor1Perm);
     qreal* tensor2StateVecPermuted = permuteArray(tensor2.qureg, tensor2Perm);
 
+    printf("finished permuting\n");
+
     //reportStateToScreen(tensor2.qureg, env, 0);
     //printTensor(tensor1StateVecImagPermuted, 1LL<<numTensor1Qubits);
     //printTensor(tensor2StateVecImagPermuted, 1LL<<numTensor2Qubits);
@@ -416,7 +427,7 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     qreal alpha[2] = {1.0, 1.0};
     qreal beta[2] = {0.0, 0.0};
 
-    //printf("dims: %d %d %d\n", M, N, K);
+    printf("dims: %d %d %d\n", M, N, K);
 
     // tensor2 x tensor1.
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, alpha,
@@ -438,6 +449,8 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     // Free old quregs
     destroyQureg(tensor1.qureg, env);
     destroyQureg(tensor2.qureg, env);
+
+    printf("freed memory\n");
 
     // Create output tensor
     Tensor outputTensor;
@@ -850,6 +863,7 @@ int incrementVqIndex(TensorNetwork tn, int globalPq){
  */
 void initVirtualTarget(Tensor tensor, int virtualTargetIndex){
      int vqIndex = virtualTargetIndex + tensor.numPq;
+     printf("vqIndex: %d\n", vqIndex);
      collapseToOutcome(tensor.qureg, vqIndex, 0);
 }
 
