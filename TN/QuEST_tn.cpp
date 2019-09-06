@@ -861,9 +861,36 @@ int incrementVqIndex(TensorNetwork tn, int globalPq){
  * @param[in,out] tensor the tensor object
  */
 void initVirtualTarget(Tensor tensor, int virtualTargetIndex){
-     int vqIndex = virtualTargetIndex + tensor.numPq;
+         int vqIndex = virtualTargetIndex + tensor.numPq;
      printf("vqIndex: %d\n", vqIndex);
-     collapseToOutcome(tensor.qureg, vqIndex, 0);
+
+    Qureg qureg = tensor.qureg;
+
+    long long int stateVecSize;
+    long long int index;
+
+    // dimension of the state vector
+    // TODO: This won't work in parallel
+    stateVecSize = 1LL << vqIndex;
+
+    qreal *stateVecReal = qureg.stateVec.real;
+    qreal *stateVecImag = qureg.stateVec.imag;
+
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (stateVecSize, stateVecReal, stateVecImag) \
+    private  (index)
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (index=0; index<stateVecSize; index++) {
+            stateVecReal[index+stateVecSize] = 0;
+            stateVecImag[index+stateVecSize] = 0;
+        }
+    }
 }
 
 /** Initialize virtual qubit to |0> + |1>
