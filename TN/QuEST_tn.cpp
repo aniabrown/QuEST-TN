@@ -24,6 +24,15 @@ void printTensor(double *tensor, int numEls){
     printf("  ]\n");
 }
 
+void printInts(int *tensor, int numEls){
+    printf("Print Ints:\n");
+    printf("\n  [\n");
+    for (int i=0; i<numEls; i++){
+        printf("\t%d\n", tensor[i]);
+    }
+    printf("  ]\n");
+}
+
 void contractTensorNetwork(TensorNetwork tn, QuESTEnv env){
     for (int i=1; i<tn.numTensors; i++){
         contractTensors(tn, 0, i, env);
@@ -391,6 +400,14 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     qreal *tensor1StateVecImagPermuted = (qreal*) malloc(stateVec1Size*sizeof(qreal));
     qreal *tensor2StateVecImagPermuted = (qreal*) malloc(stateVec2Size*sizeof(qreal));
 
+    printf("got permutation details\n");
+    printf("numTensor2Qubits %d\n", numTensor2Qubits);
+
+    printf("tensor1 permutations\n");
+    printInts(tensor1Perm, numTensor1Qubits);
+    printf("tensor2 permutations\n");
+    printInts(tensor2Perm, numTensor2Qubits);
+
 
     auto tensor1RealPlan = hptt::create_plan(tensor1Perm, numTensor1Qubits,
             1, tensor1.qureg.stateVec.real, tensor1Sizes, NULL,
@@ -413,6 +430,8 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
             hptt::ESTIMATE, 1);
     tensor2ImagPlan->execute();
 
+    printf("finished permuting\n");
+
     //reportStateToScreen(tensor2.qureg, env, 0);
     //printTensor(tensor1StateVecImagPermuted, 1LL<<numTensor1Qubits);
     //printTensor(tensor2StateVecImagPermuted, 1LL<<numTensor2Qubits);
@@ -423,18 +442,20 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     N = 1 << numTensor1FreeIndices;
     K = 1 << numContractions;
 
-    //printf("dims: %d %d %d\n", M, N, K);
+    printf("dims: %d %d %d\n", M, N, K);
 
     // tensor2 x tensor1. 
     //! This could be done more efficiently if qureg.stateVec could be cast to a complex type. Then could use one ZGEMM
-    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1, 
-            tensor2StateVecRealPermuted, M, tensor1StateVecRealPermuted, N, 0, contractedQureg.stateVec.real, M);
+    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1.0, 
+            tensor2StateVecRealPermuted, K, tensor1StateVecRealPermuted, N, 0, contractedQureg.stateVec.real, N);
     cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, -1, 
-            tensor2StateVecImagPermuted, M, tensor1StateVecImagPermuted, N, 1, contractedQureg.stateVec.real, M);
+            tensor2StateVecImagPermuted, K, tensor1StateVecImagPermuted, N, 1, contractedQureg.stateVec.real, N);
     cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1, 
-            tensor2StateVecRealPermuted, M, tensor1StateVecImagPermuted, N, 0, contractedQureg.stateVec.imag, M);
+            tensor2StateVecRealPermuted, K, tensor1StateVecImagPermuted, N, 0, contractedQureg.stateVec.imag, N);
     cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, 1, 
-            tensor2StateVecImagPermuted, M, tensor1StateVecRealPermuted, N, 1, contractedQureg.stateVec.imag, M);
+            tensor2StateVecImagPermuted, K, tensor1StateVecRealPermuted, N, 1, contractedQureg.stateVec.imag, N);
+
+    printf("finished MM\n");
 
     free(tensor1StateVecRealPermuted);
     free(tensor1StateVecImagPermuted);
@@ -450,6 +471,8 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     // Free old quregs
     destroyQureg(tensor1.qureg, env);
     destroyQureg(tensor2.qureg, env);
+
+    printf("freed memory\n");
 
     // Create output tensor
     Tensor outputTensor;
@@ -862,6 +885,7 @@ int incrementVqIndex(TensorNetwork tn, int globalPq){
  */
 void initVirtualTarget(Tensor tensor, int virtualTargetIndex){
      int vqIndex = virtualTargetIndex + tensor.numPq;
+     printf("vqIndex: %d\n", vqIndex);
      collapseToOutcome(tensor.qureg, vqIndex, 0);
 }
 
