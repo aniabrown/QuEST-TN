@@ -414,7 +414,7 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
 
     // reportStateToScreen(tensor2.qureg, env, 0);
 
-    qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*2*totalNumQ);
+    qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*(1LL << (totalNumQ+1LL)));
 
     Qureg contractedQureg = createQureg(totalNumQ, env);
     int M, N, K;
