@@ -23,7 +23,10 @@ cd build
 cmake ..
 make
 ```
-then run the example circuit in the root directory with
+
+Dependencies: BLAS and Python3.4 or later to be installed on your system. 
+
+Run the example circuit in the root directory with
 ```bash
 export PYTHONPATH=$PYTHONPATH:utilities
 python3 ./testCircuit1.py
@@ -31,7 +34,7 @@ python3 ./testCircuit1.py
 
 The program will print information about your execution environment. It will then apply the same operations, first on a 2 qubit QuEST Qureg object and then on two tensors each containing one qubit. 
 
-See the [TN tutorial](examples/timeSliceTNCircuits/README.md) for a better introduction or the [QuEST tutorial](examples/README.md) for an introduction to using QuEST.
+See the [TN tutorial](examples/timeSliceTNCircuits/README.md) for an introduction to the tensor network extension or the [QuEST tutorial](examples/README.md) for an introduction to using QuEST.
 
 ## Documentation
 
