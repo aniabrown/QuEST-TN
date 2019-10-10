@@ -10,30 +10,23 @@ WARNING: this code is currently in early development and the API could change wi
 
 ## Quick Start
 
-Copy or clone this repository to your machine. E.g. in the desired directory, enter
+Copy or clone this branch of the repository to your machine. E.g. in the desired directory, enter
 ```bash
 git clone https://github.com/aniabrown/QuEST-TN.git
+git checkout -t remotes/origin/blasExample
 cd QuEST-TN
 ```
-at terminal. You can then compile the [simplest test circuit](examples/timeSliceTNCircuits/testCircuit1.c) using
+at terminal. You can then compile the library using
 ```bash
 mkdir build
 cd build
 cmake ..
 make
 ```
-then run it with
+then run the example circuit in the root directory with
 ```bash
-./demo
-```
-and afterward, clean up with
-```bash
-make clean
-````
-
-or, to remove the build directory entirely, from the root directory
-```bash
-rm -r build
+export PYTHONPATH=$PYTHONPATH:utilities
+python3 ./testCircuit1.py
 ```
 
 The program will print information about your execution environment. It will then apply the same operations, first on a 2 qubit QuEST Qureg object and then on two tensors each containing one qubit. 
