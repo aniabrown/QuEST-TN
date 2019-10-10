@@ -24,7 +24,7 @@ cmake ..
 make
 ```
 
-Dependencies: BLAS and Python3.4 or later to be installed on your system. 
+Dependencies: BLAS and Python3.4 or later.
 
 Run the example circuit in the root directory with
 ```bash
@@ -38,7 +38,7 @@ See the [TN tutorial](examples/timeSliceTNCircuits/README.md) for an introductio
 
 ## Documentation
 
-View the API [here](https://aniabrown.github.io/QuEST-TN/QuEST__tn_8h.html)
+The C API for tensor networks is in [QuEST_tn.h](TN/QuEST_tn.h) and is extended through the python interface in [TNAdditionalGates.py](utilities/TNPy/TNAdditionalGates.py).
 
 ## Licence
 
