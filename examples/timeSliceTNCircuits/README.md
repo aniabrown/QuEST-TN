@@ -19,7 +19,16 @@ Naturally, these independent data structures do not capture any entanglement bet
 
 ### Example of a controlledNot(system, controlQubit, targetQubit) operation between qubits in different tensors
 
-For a system of 4 qubits split into 2 tensors, with tensor1 containing qubits (0,1) and tensor2 containing qubits (2,3), the operation controlledNot(globalQureg, 1, 2) can be represented by 
+For a system of 4 qubits:
+
+<img src="tutorial_images/general_0.JPG" width="50%">
+
+split into 2 tensors, with tensor1 containing qubits (0,1) and tensor2 containing qubits (2,3):
+
+<img src="tutorial_images/general_1.JPG" width="50%">
+
+
+the operation controlledNot(globalQureg, 1, 2) can be represented by 
 
 ```
 controlledNot(tensor1, 1, virtualTargetQubit)
@@ -27,6 +36,8 @@ controlledNot(tensor2, virtualControlQubit, 2)
 ```
 
 Where the virtualTargetQubit is part of the tensor1 system and initialised in the |0> state, and the virtualControlQubit is part of the tensor2 system and is initialized in the (non-normalized) |0> + |1> state. 
+
+<img src="tutorial_images/general_2.JPG" width="50%">
 
 The Qureg objects in the two tensors will not be normalized at this stage. However, a normalised system corresponding to the output that you would find doing the same operation on a single Qureg object can be recovered by performing a tensor contraction, contracting across the index corresponding to the virtual qubit in each tensor. 
 
@@ -109,5 +120,13 @@ outputTensor = contractIndices(tensor1, tensor2, tensor1Contractions, tensor2Con
 print(outputTensor.qureg)
 
 ```
+
+The code corresponds to the following general circuit:
+
+<img src="tutorial_images/small_0.JPG" width="50%">
+
+Which is split into two tensors each with one virtual qubit and the controlled not operation between the two tensors represented as follows:
+
+<img src="tutorial_images/small_2.JPG" width="50%">
 
 
