@@ -55,9 +55,10 @@ int* getTensorSizes(int numQubits){
 Tensor createTensor(int numPq, int numVq, QuESTEnv env){
     Tensor tensor;
 
-    //! Probably don't need to store this any more
+    //! Probably don't need to store these any more
     tensor.numPq = numPq;
     tensor.numVq = numVq;
+
     tensor.qureg = createQureg(tensor.numPq + tensor.numVq, env);
     //! might need to store next available vq
 
@@ -169,14 +170,6 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
 // ----- operations ------------------------------------------------------------
 
 
-int getControlGateIsLocal(TensorNetwork tn, const int controlQubit, const int targetQubit){
-    QCoord controlPqLocal = getLocalPq(tn, controlQubit);
-    QCoord targetPqLocal = getLocalPq(tn, targetQubit);
-    if (controlPqLocal.tensorIndex == targetPqLocal.tensorIndex) return 1;
-    else return 0;
-}
-
-
 /** Place target virtual qubit in the zero state
  * @param[in,out] tensor the tensor object
  */
@@ -249,20 +242,4 @@ void initVirtualControl(Tensor tensor, int virtualControlIndex){
     }
 }
 
-
-// ----- utility --------------------------------------------------------------
-
-/** Get the index of a physical qubit within a tensor from a global index which expects all
- * tensors to be ordered as in TensorNetwork.tensors
- *
- * @param[in] tn the tensor network object
- * @param[in] globalPq the index of the physical qubit in the global system
- * @returns the tensor and local index within the tensor of the qubit
- */
-QCoord getLocalPq(TensorNetwork tn, int globalPq){
-    QCoord localPq;
-    localPq.tensorIndex = tn.tensorIndexFromGlobalPq[globalPq];
-    localPq.qIndex = globalPq - tn.tensors[localPq.tensorIndex].firstGlobalPqIndex;
-    return localPq;
-}
 

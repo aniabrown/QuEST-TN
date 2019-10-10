@@ -15,40 +15,36 @@ from TNPy.TNAdditionalGates import *
 
 env = createQuESTEnv()
 
-print("Create Tensor Network")
-numPqPerTensor = [1, 1]
-numVqPerTensor = [1, 1]
+printf("Create tensor1. It will be in the zero state by default\n");
+tensor1 = createTensor(1, 1, env)
+reportStateToScreen(tensor1.qureg, env, 0)
 
-numPqPerTensor = (c_int*2)(*numPqPerTensor)
-numVqPerTensor = (c_int*2)(*numVqPerTensor)
+printf("Create tensor2. It will be in the zero state by default\n");
+tensor2 = createTensor(1, 1, env)
+reportStateToScreen(tensor2.qureg, env, 0)
 
-tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env)
-printTensorNetwork(tn)
+printf("Apply pauliX to qubit 0, which is qubit zero in tensor1\n");
+TN_singleQubitGate(pauliX, tensor1, 0)
+reportStateToScreen(tensor1.qureg, env, 0)
 
-u = ComplexMatrix2()
-u.r0c0=Complex(0,0)
-u.r0c1=Complex(1,0)
-u.r1c0=Complex(1,0)
-u.r1c1=Complex(0,0)
-#print(u)
+printf("Apply a controlled not gate controlled by qubit 0, to qubit 1\n");
+TN_controlledGateControlHalf(controlledNot, tensor1, 0, 1)
+TN_controlledGateTargetHalf(controlledNot, tensor2, 1, 0)
 
+printf("Tensor1:\n");
+reportStateToScreen(tensor1.qureg, env, 0)
+printf("Tensor2:\n");
+reportStateToScreen(tensor2.qureg, env, 0)
 
-reportStateToScreen(tn.tensors[0].qureg, env, 0)
-TN_singleQubitGate(pauliX, tn, 1)
-reportStateToScreen(tn.tensors[0].qureg, env, 0)
+printf("Contract tensor1 and tensor2 across their virtual qubit index\n");
+tensor1Contractions = [1]
+tensor2Contractions = [1]
+tensor1FreeIndices = [0]
+tensor2FreeIndices = [0]
+outputTensor = contractIndices(tensor1, tensor2, tensor1Contractions, tensor2Contractions, 1,
+		tensor1FreeIndices, 1, tensor2FreeIndices, 1, env)
 
-##tn_controlledNot(tn, 0, 1)
-TN_controlledGate(controlledNot, tn, 0, 1)
-tn_unitary(tn, 0, u)
-
-printTensorNetwork(tn)
-reportStateToScreen(tn.tensors[0].qureg, env, 0)
-reportStateToScreen(tn.tensors[1].qureg, env, 0)
-
-contractTensorNetwork(tn, env)
-
-printTensorNetwork(tn)
-reportStateToScreen(tn.tensors[0].qureg, env, 0)
+reportStateToScreen(outputTensor, env, 0)
 
 
 
