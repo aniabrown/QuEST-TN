@@ -51,7 +51,7 @@ from TNPy.TNFunc import *
 from TNPy.TNAdditionalGates import *
 ```
 
-The currently available API for operations on tensor networks is at [QuEST_tn.h](TN/QuEST_tn.h) and the python-only functions are in [TNAdditionalGates.py](utilities/TNPy/TNAdditionalGates.py). For operations on plain QuEST Qureg objects, see the API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html) and the [QuEST tutorial](examples/README.md). 
+The currently available API for operations on tensor networks is at [QuEST_tn.h](TN/QuEST_tn.h) and the python-only functions are in [TNAdditionalGates.py](../../utilities/TNPy/TNAdditionalGates.py). For operations on plain QuEST Qureg objects, see the API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html) and the [QuEST tutorial](examples/README.md). 
 
 Here's a very simple circuit which applies a controlled not on a two qubit state split over two
 tensors, contracts the two tensors together and reports the output. 
