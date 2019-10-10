@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <QuEST.h>
 #include "QuEST_debug.h"
-#include "QuEST_tn_internal.h"
 #include "QuEST_tn.h"
 #include <cblas.h>
 

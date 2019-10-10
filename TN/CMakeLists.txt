@@ -21,7 +21,6 @@
 # -----------------------------------------------------------------------------
 
 find_package(LAPACK)
-find_library(HPTT_LIB_PATH hptt ../hptt/lib)
 
 # -----------------------------------------------------------------------------
 # ----- SET COMPILER FLAGS ----------------------------------------------------
@@ -122,7 +121,7 @@ endif()
 
 
 add_library(TN SHARED
-    QuEST_tn.cpp
+    QuEST_tn.c
     )
 
 # ----- Location of header files ----------------------------------------------
@@ -146,7 +145,7 @@ target_include_directories(TN
 
 add_subdirectory(QuEST)
 
-target_link_libraries(TN QuEST lapack blas ${HPTT_LIB_PATH})
+target_link_libraries(TN QuEST lapack blas)
 
 
 

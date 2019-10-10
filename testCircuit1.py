@@ -41,8 +41,19 @@ tensor1Contractions = [1]
 tensor2Contractions = [1]
 tensor1FreeIndices = [0]
 tensor2FreeIndices = [0]
-outputTensor = contractIndices(tensor1, tensor2, tensor1Contractions, tensor2Contractions, 1,
-		tensor1FreeIndices, 1, tensor2FreeIndices, 1, env)
+
+numContractions = 1
+numTensor1FreeIndices = 1
+numTensor2FreeIndices = 1
+
+# Cast to correct type for c
+tensor1Contractions = (c_int*numContractions)(*tensor1Contractions)
+tensor2Contractions = (c_int*numContractions)(*tensor2Contractions)
+tensor1FreeIndices = (c_int*numTensor1FreeIndices)(*tensor1FreeIndices)
+tensor2FreeIndices = (c_int*numTensor2FreeIndices)(*tensor2FreeIndices)
+
+outputTensor = contractIndices(tensor1, tensor2, tensor1Contractions, tensor2Contractions, numContractions,
+		tensor1FreeIndices, numTensor2FreeIndices, tensor2FreeIndices, numTensor2FreeIndices, env)
 
 reportStateToScreen(outputTensor, env, 0)
 
