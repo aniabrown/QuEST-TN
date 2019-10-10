@@ -15,28 +15,31 @@ from TNPy.TNAdditionalGates import *
 
 env = createQuESTEnv()
 
-printf("Create tensor1. It will be in the zero state by default\n");
+print("Create tensor1. It will be in the zero state by default");
 tensor1 = createTensor(1, 1, env)
+print("Tensor1:");
 reportStateToScreen(tensor1.qureg, env, 0)
 
-printf("Create tensor2. It will be in the zero state by default\n");
+print("Create tensor2. It will be in the zero state by default");
 tensor2 = createTensor(1, 1, env)
+print("Tensor2:");
 reportStateToScreen(tensor2.qureg, env, 0)
 
-printf("Apply pauliX to qubit 0, which is qubit zero in tensor1\n");
+print("Apply pauliX to global qubit 0, which is qubit 0 in tensor1");
 TN_singleQubitGate(pauliX, tensor1, 0)
+print("Tensor1:");
 reportStateToScreen(tensor1.qureg, env, 0)
 
-printf("Apply a controlled not gate controlled by qubit 0, to qubit 1\n");
+print("Apply a controlled not gate controlled by global qubit 0, to global qubit 1");
 TN_controlledGateControlHalf(controlledNot, tensor1, 0, 1)
 TN_controlledGateTargetHalf(controlledNot, tensor2, 1, 0)
 
-printf("Tensor1:\n");
+print("Tensor1:");
 reportStateToScreen(tensor1.qureg, env, 0)
-printf("Tensor2:\n");
+print("Tensor2:");
 reportStateToScreen(tensor2.qureg, env, 0)
 
-printf("Contract tensor1 and tensor2 across their virtual qubit index\n");
+print("Contract tensor1 and tensor2 across their virtual qubit index");
 tensor1Contractions = [1]
 tensor2Contractions = [1]
 tensor1FreeIndices = [0]
@@ -55,7 +58,7 @@ tensor2FreeIndices = (c_int*numTensor2FreeIndices)(*tensor2FreeIndices)
 outputTensor = contractIndices(tensor1, tensor2, tensor1Contractions, tensor2Contractions, numContractions,
 		tensor1FreeIndices, numTensor2FreeIndices, tensor2FreeIndices, numTensor2FreeIndices, env)
 
-reportStateToScreen(outputTensor, env, 0)
+reportStateToScreen(outputTensor.qureg, env, 0)
 
 
 

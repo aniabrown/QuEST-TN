@@ -100,13 +100,13 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
         int *tensor2FreeIndices, int numTensor2FreeIndices,
         QuESTEnv env){
 
-    printf("Contract with BLAS\n");
-
+    printf("Begin contracting\n");
     int numTensor1Qubits, numTensor2Qubits;
     numTensor1Qubits = tensor1.qureg.numQubitsRepresented;
     numTensor2Qubits = tensor2.qureg.numQubitsRepresented;
     int totalNumQ = numTensor1FreeIndices + numTensor2FreeIndices;
 
+    printf("Permute indices to transform tensor contraction into the form of a matrix matrix multiply\n");
     int *tensor1Perm = getTensorIndexPermutation(tensor1Contractions, numContractions,
 						 tensor1FreeIndices, numTensor1FreeIndices, 1);
     int *tensor2Perm = getTensorIndexPermutation(tensor2Contractions, numContractions,
@@ -114,13 +114,12 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
 
     qreal* tensor1StateVecPermuted = permuteArray(tensor1.qureg, tensor1Perm);
     qreal* tensor2StateVecPermuted = permuteArray(tensor2.qureg, tensor2Perm);
-    printf("finished permuting\n");
 
-    // reportStateToScreen(tensor2.qureg, env, 0);
-
+    // Working output array for BLAS routine. This needs to be separate to contractedQureg as 
+    // that represents complex numbers as a struct of arrays where BLAS will output an array of complex types
     qreal* outputQureg = (qreal *) malloc(sizeof(qreal)*(1LL << (totalNumQ+1LL)));
 
-    Qureg contractedQureg = createQureg(totalNumQ, env);
+    // Dimensions of MM multiply
     int M, N, K;
     M = 1 << numTensor2FreeIndices;
     N = 1 << numTensor1FreeIndices;
@@ -128,20 +127,21 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     qreal alpha[2] = {1.0, 0.0};
     qreal beta[2] = {0.0, 0.0};
 
-    printf("dims: %d %d %d\n", M, N, K);
+    printf("MM multiply dimensions: M:%d N:%d K:%d\n", M, N, K);
 
-    printTensor(tensor1StateVecPermuted, 1LL<<(numTensor1Qubits+1));
-    printTensor(tensor2StateVecPermuted, 1LL<<(numTensor2Qubits+1));
+    printf("Do MM multiply\n");
     // tensor2 x tensor1.
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans, M, N, K, alpha,
     		tensor2StateVecPermuted, K, tensor1StateVecPermuted, N, beta, outputQureg, N);
 
-    // Copy data back
+    // Copy output into qureg object
+    Qureg contractedQureg = createQureg(totalNumQ, env);
     for(long long int index = 0; index < contractedQureg.numAmpsPerChunk; index++) {
       contractedQureg.stateVec.real[index] = outputQureg[2*index];
       contractedQureg.stateVec.imag[index] = outputQureg[2*index+1];
     }
 
+    printf("Free memory\n");
     free(tensor1StateVecPermuted);
     free(tensor2StateVecPermuted);
     free(outputQureg);
@@ -153,12 +153,10 @@ Tensor contractIndices(Tensor tensor1, Tensor tensor2,
     destroyQureg(tensor1.qureg, env);
     destroyQureg(tensor2.qureg, env);
 
-    printf("freed memory\n");
-
     // Create output tensor
     Tensor outputTensor;
     outputTensor.qureg = contractedQureg;
-    //! Set total number of qubits here -- don't know number of virtual/physical qubits
+    //! TODO: We may need to set total number of qubits here
     //outputTensor.numPq = totalNumPq;
     //outputTensor.numVq = totalNumVq;
 

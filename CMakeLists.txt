@@ -70,8 +70,9 @@ if (${TESTING})
     #if (${TESTING})
     #  enable_testing()
     #  add_subdirectory(${QuEST_UTIL_DIR})
-      enable_testing()
-      add_subdirectory(TNTests)
+
+    #enable_testing()
+    #  add_subdirectory(TNTests)
 endif()
 
 # -----------------------------------------------------------------------------
