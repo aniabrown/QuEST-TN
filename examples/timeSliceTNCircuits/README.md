@@ -21,10 +21,10 @@ Naturally, these independent data structures do not capture any entanglement bet
 
 For a system of 4 qubits split into 2 tensors, with tensor1 containing qubits (0,1) and tensor2 containing qubits (2,3), the operation controlledNot(globalQureg, 1, 2) can be represented by 
 
-'''
+```
 controlledNot(tensor1, 1, virtualTargetQubit)
 controlledNot(tensor2, virtualControlQubit, 2)
-'''
+``
 
 Where the virtualTargetQubit is part of the tensor1 system and initialised in the |0> state, and the virtualControlQubit is part of the tensor2 system and is initialized in the (non-normalized) |0> + |1> state. 
 
