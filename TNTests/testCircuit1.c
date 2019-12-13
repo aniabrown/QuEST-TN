@@ -43,7 +43,6 @@ int main (int narg, char *varg[]) {
     controlledNot(qubits, 0, 1);
     reportStateToScreen(qubits, env, 0);
 
-
     /*
      * TENSOR NETWORK
      */
@@ -96,9 +95,18 @@ int main (int narg, char *varg[]) {
     // Contract
     printf("\n\nContract tensors:\n");
     contractTensors(tn, 0, 1, env);
-    printf("Tensor 0\n");
+
     reportStateToScreen(tn.tensors[0].qureg, env, 0);
 
+    /*
+     * COMPARE PLAIN QuEST and TN RESULTS
+     */
+
+    int correctOutcome = compareStates(tn.tensors[0].qureg, qubits, 10e-10);
+    printf("\n**************************************************\n");
+    if (correctOutcome) printf("Passed test\n");
+    else printf("Failed test\n");
+    printf("**************************************************\n");
 
     /*
      * FREE MEMORY
@@ -112,5 +120,7 @@ int main (int narg, char *varg[]) {
      * (Required once at end of program)
      */
     destroyQuESTEnv(env);
-    return 0;
+
+
+    return !correctOutcome;
 }

@@ -2,146 +2,131 @@ QuEST-TN Tutorial
 ======
 
 **Table of Contents**
+- [Background](#background)
 - [Coding](#coding)
-- [Compiling](#compiling)
-- [Running](#running)
-- [Test circuits](#Test-circuits)
 
+# Background
+
+## Motivation
+
+The fundamental idea behind the tensor network extension is to save memory and time by splitting the full system of multiple qubits, represented by single a Qureg object in QuEST, into multiple independent collections of qubits, each with its own Qureg. As an example, for a system of 30 qubits, 2^30 complex doubles need to be stored in the usual QuEST implementation. If this can be split into two systems of 15 qubits, only 2*2^15 elements need to be stored. Any gates applied to one of these systems will also only need to process 2^15 elements. 
+
+It can be useful to treat these subsystems as tensors of rank numQubits, with each tensor index ranging from {0,1} and corresponding to a single qubit.
+
+## Entanglement
+
+Naturally, these independent data structures do not capture any entanglement between qubits in different subsystems. However, an entangling operation between qubits in different tensors can be represented by introducing an additional 'virtual' qubit to each of the two tensors, as described below. It is necessary to balance the savings due to splitting a system of qubits into multiple subsystems against the number of entangling operations between the two systems, each introducing an additional qubit. The method will be most useful for circuits with weakly entangled subsystems.
+
+### Example of a controlledNot(system, controlQubit, targetQubit) operation between qubits in different tensors
+
+For a system of 4 qubits:
+
+<img src="tutorial_images/general_0.JPG" width="50%">
+
+split into 2 tensors, with tensor1 containing qubits (0,1) and tensor2 containing qubits (2,3):
+
+<img src="tutorial_images/general_1.JPG" width="50%">
+
+
+the operation controlledNot(globalQureg, 1, 2) can be represented by 
+
+```
+controlledNot(tensor1, 1, virtualTargetQubit)
+controlledNot(tensor2, virtualControlQubit, 2)
+```
+
+Where the virtualTargetQubit is part of the tensor1 system and initialised in the |0> state, and the virtualControlQubit is part of the tensor2 system and is initialized in the (non-normalized) |0> + |1> state. 
+
+<img src="tutorial_images/general_2.JPG" width="50%">
+
+The Qureg objects in the two tensors will not be normalized at this stage. However, a normalised system corresponding to the output that you would find doing the same operation on a single Qureg object can be recovered by performing a tensor contraction, contracting across the index corresponding to the virtual qubit in each tensor. 
+
+This can be generalised to any control operation by initialising the virtual qubits in the same way but applying the corresponding control operation, and to multiple entangling operations by tracking pairs of virtual qubits across tensors. When contracting two tensors with multiple entangling operations between them, all pairs of virutal qubit indices are contracted out.
 
 # Coding
 
-To use the QuEST-TN extension in your C or C++ code, include
+To use the QuEST-TN extension in Python code located in the root directory, include
 
-```C
-#include <QuEST.h>
-#include <QuEST_tn.h>
+```
+from QuESTPy.QuESTBase import init_QuESTLib
+from TNPy.TNBase import init_TNLib
+
+QuESTPath = "build/TN/QuEST/"
+TNPath = "build/TN/"
+
+init_QuESTLib(QuESTPath)
+init_TNLib(TNPath)
+
+from QuESTPy.QuESTFunc import *
+from TNPy.TNFunc import *
+from TNPy.TNAdditionalGates import *
 ```
 
-The currently available API for operations on tensor networks is available [here](https://aniabrown.github.io/QuEST-TN/QuEST__tn_8h.html). For operations on plain QuEST Qureg objects, see the API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html) and the [QuEST tutorial](examples/README.md). 
+The currently available API for operations on tensor networks is at [QuEST_tn.h](TN/QuEST_tn.h) and the python-only functions are in [TNAdditionalGates.py](../../utilities/TNPy/TNAdditionalGates.py). For operations on plain QuEST Qureg objects, see the API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html) and the [QuEST tutorial](examples/README.md). 
 
 Here's a very simple circuit which applies a controlled not on a two qubit state split over two
-tensors and reports the resulting tensor network structure. 
- 
-```C
-#include <QuEST.h>
-#include <QuEST_tn.h>
+tensors, contracts the two tensors together and reports the output. 
 
-int main(int narg, char *varg[]) {
+Note that this code requires that the pairs of indices of the virtual qubits to contract are known. For more complex circuits, there needs to be some additional infrastructure to track these indices, which is currently being designed. See -- https://github.com/oerc0122/QASMParser
 
-  // load QuEST environment. Do this exactly once as the first step in your code.
-  QuESTEnv env = createQuESTEnv();
-  
-  int numPqPerTensor[2] = {1, 1};
-  int numVqPerTensor[2] = {1, 1};
-  
-  TensorNetwork tn = createTensorNetwork(2, numPqPerTensor, numVqPerTensor, env);
-  printTensorNetwork(tn);
-  tn_controlledNot(tn, 0, 1);
-  printTensorNetwork(tn);
-	
-  // unload QuEST environment. Do this exactly one as the last step in your code. 
-  destroyQuESTEnv(env); 
-  return 0;
-}
 ```
-----------------------------
+from QuESTPy.QuESTBase import init_QuESTLib
+from TNPy.TNBase import init_TNLib
 
-# Compiling
+# If set up
+QuESTPath = "build/TN/QuEST/"
+TNPath = "build/TN/"
 
-QuEST uses CMake (3.1 or higher) as its build system.
+init_QuESTLib(QuESTPath)
+init_TNLib(TNPath)
 
-To compile, make sure your circuit code is accessible from the root QuEST directory.
-In the root directory, initially build using
-```bash
-mkdir build
-cd build
-cmake -DUSER_SOURCE="myCode1.c;myCode2.c" ..
-make
-```
-Paths to target sources are set as a semi-colon separated list of paths to said sources relative to the root QuEST directory.
+#!/usr/bin/env python3
+from QuESTPy.QuESTFunc import *
+from TNPy.TNFunc import *
+from TNPy.TNAdditionalGates import *
 
-If you wish your executable to be named something other than `demo`, you can set this too by using:
-```bash
-cmake -DOUTPUT_EXE="myExecutable" ..
-```
+# Create tensor1. It will be in the zero state by default
+tensor1 = createTensor(1, 1, env)
 
-When using the cmake command as above, the -D[VAR=VALUE] option can be passed other options to further configure your build.
+# Create tensor2. It will be in the zero state by default
+tensor2 = createTensor(1, 1, env)
 
-You customise the precision with which the state-vector is stored.
-```bash
-cmake -DPRECISION=2 ..
-```
-Using greater precision means more precise computation but at the expense of additional memory requirements and runtime.
-Checking results are unchanged when altaring the precision can be a great test that your calculations are sufficiently precise.
+# Apply pauliX to global qubit 0, which is qubit 0 in tensor1
+TN_singleQubitGate(pauliX, tensor1, 0)
 
-Please note that cmake caches these changes (per directory) so for any subsequent builds you should just type `make` from the build directory and the previously defined settings will be applied. If any parameters require changing, these can be redefined by:
-```
-cmake -D[VAR=VALUE] ..
-```
-as one would do in the initial configuration.
+# Apply a controlled not gate controlled by global qubit 0, to global qubit 1
+TN_controlledGateControlHalf(controlledNot, tensor1, 0, 1)
+TN_controlledGateTargetHalf(controlledNot, tensor2, 1, 0)
 
-For a full list of available configuration parameters, use
-```bash
-cmake -LH ..
+# Contract tensor1 and tensor2 across their virtual qubit index
+tensor1Contractions = [1]
+tensor2Contractions = [1]
+tensor1FreeIndices = [0]
+tensor2FreeIndices = [0]
+
+numContractions = 1
+numTensor1FreeIndices = 1
+numTensor2FreeIndices = 1
+
+# Cast to correct type for c
+tensor1Contractions = (c_int*numContractions)(*tensor1Contractions)
+tensor2Contractions = (c_int*numContractions)(*tensor2Contractions)
+tensor1FreeIndices = (c_int*numTensor1FreeIndices)(*tensor1FreeIndices)
+tensor2FreeIndices = (c_int*numTensor2FreeIndices)(*tensor2FreeIndices)
+
+outputTensor = contractIndices(tensor1, tensor2, tensor1Contractions, tensor2Contractions, numContractions,
+                tensor1FreeIndices, numTensor2FreeIndices, tensor2FreeIndices, numTensor2FreeIndices, env)
+
+print(outputTensor.qureg)
+
 ```
 
-For manual configuration (not recommended) you can change the `CMakeLists.txt` in the root QuEST directory.
+The code corresponds to the following general circuit:
 
-----------------------------
+<img src="tutorial_images/small_0.JPG" width="50%">
 
-# Running
+Which is split into two tensors each with one virtual qubit and the controlled not operation between the two tensors represented as follows:
 
-## locally
+<img src="tutorial_images/small_2.JPG" width="50%">
 
-You can then call your code. From the build directory:
-```bash
-./myExecutable
-```
-If multithreading functionality was found when compiling, you can control how many threads your code uses by setting `OMP_NUM_THREADS`, ideally to the number of available cores on your machine
-```bash
-export OMP_NUM_THREADS=8
-./myExecutable
-```
-QuEST will automatically allocate work between the given number of threads to speedup your simulation.
-
----------------------------
-
-# Test circuits
-
-There are several simple test circuits located in examples/timeSliceTNCircuits. To use one of these circuits, copy the circuit file to the root directory and then use
-
-```bash
-mkdir build
-cd build
-cmake -DUSER_SOURCE="testCircuitN.c"
-make 
-./demo
-```
-
-The list of test circuits is as follows:
-
-testCircuit1.c
-```
-0 ----- * -----
-        |
-1 ----- o -----
-```
-
-testCircuit2.c: 
-```
-0 ----- * ----- * ----- 
-        |       |       
-1 ----- | ----- o ----- 
-        |               
-2 ----- o ------------- 
-```
-
-testCircuit3.c: 
-```
-0 ----- * ----- * ----- * -----
-        |       |       |
-1 ----- | ----- o ----- | -----
-        |               |
-2 ----- o ------------- o -----
-```
 
